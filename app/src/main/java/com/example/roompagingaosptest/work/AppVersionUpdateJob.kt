@@ -14,12 +14,18 @@ class AppVersionUpdateJob(
     context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
+    companion object {
+        fun createTag(appInfo: AppInfo) = "version-update-job-${appInfo.packageName}"
+    }
+
     override suspend fun doWork(): Result {
         val database = TestDatabase.getInstance(applicationContext)
         val input = Input(inputData)
-
+        setProgress(Progress(0.0).progressData)
+        delay(2500L)
         setProgress(Progress(1/3.0).progressData)
         delay(2500L)
+
 
         val success = database.withTransaction {
             val dao = database.appInfoDao()
@@ -31,6 +37,7 @@ class AppVersionUpdateJob(
         }
 
         setProgress(Progress(1.0).progressData)
+        delay(2500L)
         return if (success) Result.success() else Result.failure()
     }
 

@@ -28,6 +28,7 @@ class AppInfoAdapter(
     override fun onViewRecycled(holder: AppInfoViewHolder) {
         super.onViewRecycled(holder)
         Log.d(TAG, "onViewRecycled: holder=${holder.appInfo}")
+        holder.stopObserving()
     }
 
     override fun onBindViewHolder(holder: AppInfoViewHolder, position: Int) {

@@ -12,16 +12,15 @@ import androidx.annotation.UiThread
 import androidx.core.view.isVisible
 import androidx.lifecycle.*
 import androidx.recyclerview.widget.RecyclerView
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import androidx.work.WorkQuery
+import androidx.work.*
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.MainActivityViewModel
 import com.example.roompagingaosptest.R
 import com.example.roompagingaosptest.work.AppVersionUpdateJob
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -41,10 +40,10 @@ class AppInfoViewHolder(
     private val lastUpdate: TextView = itemView.findViewById(R.id.lastUpdatedTextView)
     private val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
     private val updateButton: Button = itemView.findViewById(R.id.updateButton)
-    private val progressBar: ProgressBar = itemView.findViewById(R.id.progressBar)
+    private val progressBar: CircularProgressIndicator = itemView.findViewById(R.id.progressBar)
     init {
         progressBar.isVisible = false
-        // progressBar.isIndeterminate = false
+        progressBar.isIndeterminate = false
         progressBar.max = 100
     }
     private val workManager = WorkManager.getInstance(itemView.context)
@@ -55,23 +54,34 @@ class AppInfoViewHolder(
         Toast.makeText(itemView.context, "Observing: ${progress.percentage}", Toast.LENGTH_SHORT).show()
         Log.d(AppInfoViewHolder::class.simpleName, "Observing: ${progress.percentage}")
         workInfo ?: return@Observer
+
         if (workInfo.state.isFinished) {
-            progressBar.isVisible = false
-            progressBar.progress = 0
+            if (progressBar.isVisible) {
+                lifecycle.lifecycleScope.launch {
+                    delay(2000L)
+                    progressBar.isVisible = false
+                    progressBar.setProgressCompat(0, true)
+                    stopObserving()
+                }
+            } else {
+                stopObserving()
+            }
         } else {
             progressBar.isVisible = true
-            progressBar.setProgress(50, false)
+            progressBar.setProgressCompat((100 * progress.percentage).roundToInt(), true)
         }
     }
 
     init {
         updateButton.setOnClickListener {
             appInfo?.let {
+                val tag = AppVersionUpdateJob.createTag(it)
                 val workRequest = OneTimeWorkRequestBuilder<AppVersionUpdateJob>()
+                    .addTag(tag)
                     .setInputData(AppVersionUpdateJob.Input(it).inputData)
                     .build()
 
-                workManager.enqueue(workRequest)
+                workManager.enqueueUniqueWork(tag, ExistingWorkPolicy.APPEND_OR_REPLACE, workRequest)
 
                 progressLiveData?.removeObserver(updateObserver)
                 progressLiveData = workManager.getWorkInfoByIdLiveData(workRequest.id)
@@ -93,11 +103,12 @@ class AppInfoViewHolder(
 
     fun stopObserving() {
         progressLiveData?.removeObserver(updateObserver)
+        progressLiveData = null
     }
 
     @UiThread
     fun bind(appInfo: AppInfo?) {
-        progressLiveData?.removeObserver(updateObserver)
+        stopObserving()
         this.appInfo = appInfo
         appName.text = appInfo?.packageName ?: ""
         versionCode.text = appInfo?.versionCode?.toString() ?: ""
