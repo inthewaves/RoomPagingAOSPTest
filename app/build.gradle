@@ -51,4 +51,5 @@ dependencies {
     implementation "androidx.recyclerview:recyclerview:1.2.0-alpha04"
 
     implementation "androidx.work:work-runtime-ktx:2.6.0-alpha02"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 }

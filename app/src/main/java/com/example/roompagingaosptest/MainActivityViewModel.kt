@@ -8,6 +8,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.roompagingaosptest.db.AppInfo
+import com.example.roompagingaosptest.db.TestDatabase
 import kotlinx.coroutines.flow.Flow
 
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {

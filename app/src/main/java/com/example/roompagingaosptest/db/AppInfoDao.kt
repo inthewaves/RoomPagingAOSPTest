@@ -1,6 +1,7 @@
 package com.example.roompagingaosptest
 
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
 import androidx.room.*
 import com.example.roompagingaosptest.db.AppInfo
@@ -45,4 +46,7 @@ interface AppInfoDao {
 
     @Query("SELECT * FROM AppInfo ORDER BY packageName")
     fun allAppInfoList(): List<AppInfo>
+
+    @Query("SELECT * FROM AppInfo ORDER BY packageName")
+    fun allAppInfoLivedata(): LiveData<List<AppInfo>>
 }

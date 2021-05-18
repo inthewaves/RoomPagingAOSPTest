@@ -48,7 +48,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             viewModel.appInfos.collectLatest {
-                Toast.makeText(this@MainActivity, "Received new paging data", Toast.LENGTH_LONG).show()
                 adapter.submitData(it)
             }
         }

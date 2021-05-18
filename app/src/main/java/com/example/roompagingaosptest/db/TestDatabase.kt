@@ -1,9 +1,14 @@
-package com.example.roompagingaosptest
+package com.example.roompagingaosptest.db
 
 import android.content.Context
 import androidx.annotation.GuardedBy
-import androidx.room.*
-import com.example.roompagingaosptest.db.AppInfo
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
+import com.example.roompagingaosptest.AppInfoDao
+import java.util.UUID
 
 const val CURRENT_DB_VERSION = 1
 
@@ -12,6 +17,7 @@ const val CURRENT_DB_VERSION = 1
     version = CURRENT_DB_VERSION,
     exportSchema = false
 )
+@TypeConverters(TestDatabase.Converter::class)
 abstract class TestDatabase : RoomDatabase() {
     abstract fun appInfoDao(): AppInfoDao
 
@@ -20,6 +26,13 @@ abstract class TestDatabase : RoomDatabase() {
             super.close()
             instance = null
         }
+    }
+
+    class Converter {
+        @TypeConverter
+        fun uuidToString(uuid: UUID?): String? = uuid?.toString()
+        @TypeConverter
+        fun stringToUuid(string: String?): UUID? = string?.let { UUID.fromString(it) }
     }
 
     companion object {
