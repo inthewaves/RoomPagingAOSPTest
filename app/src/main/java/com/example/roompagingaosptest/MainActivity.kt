@@ -14,9 +14,15 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.paging.AppInfoAdapter
 import com.example.roompagingaosptest.paging.AppInfoViewHolder
+import com.example.roompagingaosptest.work.PackageInsertJob
+import com.example.roompagingaosptest.work.PackageInsertJobInputData
+import com.example.roompagingaosptest.work.VersionUpdateJobInput
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.flow.collectLatest
@@ -32,7 +38,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val adapter = AppInfoAdapter(viewModel)
-
         val recyclerView = findViewById<RecyclerView>(R.id.appInfoRecyclerView)
 
         lifecycleScope.launch {
@@ -51,36 +56,19 @@ class MainActivity : AppCompatActivity() {
         val newPackage = findViewById<TextView>(R.id.package_name_text)
         val newVersion = findViewById<TextView>(R.id.version_text)
 
-        lifecycleScope.launch {
-            val addButton = findViewById<Button>(R.id.addButton)
-            val addButtonActor = actor<AppInfo> {
-                for (appInfo in channel) {
-                    viewModel.insertAppInfo(appInfo)
-                }
-            }
+        val addButton = findViewById<Button>(R.id.addButton)
+        addButton.setOnClickListener {
+            val input = PackageInsertJobInputData.create(
+                newPackage.text.toString(),
+                newVersion.text.toString().toIntOrNull()
+            )
+            val request = OneTimeWorkRequestBuilder<PackageInsertJob>()
+                .setInputData(input.data)
+                .addTag(PackageInsertJob.createTag(input))
+                .build()
 
-            class CantMakeException(message: String) : Exception(message)
-
-            addButton.setOnClickListener {
-                try {
-                    val pkg = newPackage.text.toString()
-                    if (pkg.isBlank()) {
-                        throw CantMakeException("invalid package name")
-                    }
-
-                    val version = newVersion.text.toString().toIntOrNull()
-                    if (version == null || version < 1) {
-                        throw CantMakeException("invalid version --- needs to be positive integer")
-                    }
-
-                    val appInfo = AppInfo(pkg, version, System.currentTimeMillis() / 1000)
-                    if (!addButtonActor.offer(appInfo)) {
-                        throw CantMakeException("offering to channel failed")
-                    }
-                } catch (e: CantMakeException) {
-                    Snackbar.make(recyclerView, "Can't insert package: ${e.message}", Snackbar.LENGTH_LONG).show()
-                }
-            }
+            WorkManager.getInstance(this@MainActivity)
+                .enqueue(request)
         }
     }
 }

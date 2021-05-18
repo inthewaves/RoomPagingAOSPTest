@@ -19,8 +19,8 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
         }.flow
         .cachedIn(viewModelScope)
 
-    suspend fun updateAppInfo(packageName: String, newVersionCode: Long) {
-        database.appInfoDao().updateVersionCode(packageName, newVersionCode)
+    suspend fun incrementVersionCode(appInfo: AppInfo) {
+        // database.appInfoDao().updateVersionCode(appInfo.packageName, appInfo.versionCode + 1L)
     }
 
     suspend fun deleteAppInfo(packageName: String) {

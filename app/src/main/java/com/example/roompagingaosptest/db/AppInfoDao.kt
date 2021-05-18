@@ -42,4 +42,7 @@ interface AppInfoDao {
 
     @Query("SELECT * FROM AppInfo ORDER BY packageName")
     fun allAppInfo(): PagingSource<Int, AppInfo>
+
+    @Query("SELECT * FROM AppInfo ORDER BY packageName")
+    fun allAppInfoList(): List<AppInfo>
 }

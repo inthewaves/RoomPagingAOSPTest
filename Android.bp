@@ -13,7 +13,8 @@ android_app {
 
         "custom-androidx.room_room-ktx",
         "androidx.paging_paging-runtime",
-        "androidx.recyclerview_recyclerview"
+        "androidx.recyclerview_recyclerview",
+        "custom-work-runtime-ktx"
     ],
     plugins: [
         "custom-androidx.room_room-compiler-plugin",
