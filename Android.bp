@@ -7,14 +7,15 @@ android_app {
         "kotlinx-coroutines-android",
         "androidx.core_core-ktx",
         "androidx.appcompat_appcompat",
-        "com.google.android.material_material",
+        "custom-com.google.android.material_material",
         "androidx-constraintlayout_constraintlayout",
         "androidx.fragment_fragment-ktx",
 
         "custom-androidx.room_room-ktx",
         "androidx.paging_paging-runtime",
         "androidx.recyclerview_recyclerview",
-        "custom-work-runtime-ktx"
+        "custom-work-runtime-ktx",
+        "kotlin-reflect"
     ],
     plugins: [
         "custom-androidx.room_room-compiler-plugin",

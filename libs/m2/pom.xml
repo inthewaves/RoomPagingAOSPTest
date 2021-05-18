@@ -33,6 +33,33 @@
     </repositories>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/com.google.android.material/material -->
+        <dependency>
+            <groupId>com.google.android.material</groupId>
+            <artifactId>material</artifactId>
+            <version>1.3.0</version>
+            <scope>runtime</scope>
+            <type>aar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>androidx.annotation</groupId>
+            <artifactId>annotation-experimental</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+            <type>aar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/androidx.work/work-runtime-ktx -->
         <dependency>
             <groupId>androidx.work</groupId>
