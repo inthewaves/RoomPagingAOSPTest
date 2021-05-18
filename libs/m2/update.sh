@@ -15,15 +15,17 @@
 # limitations under the License.
 
 
-git rm *.jar *.aar
+git rm *.jar *.aar *.pom
 
 EXCLUDES="google-java-format,javax.inject,support-annotations,jsr250-api,checker-compat-qual"
 
 mvn \
   -DoutputDirectory=${pwd}  \
   dependency:copy-dependencies \
+  -Dmdep.copyPom=true \
+  -Dmdep.addParentPoms=true \
   -DexcludeArtifactIds=${EXCLUDES}
 
-git add *.jar *.aar
+git add *.jar *.aar *.pom
 
 
