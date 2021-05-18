@@ -1,0 +1,25 @@
+android_app {
+    name: "RoomPagingAOSPTest",
+    srcs: ["app/src/main/**/*.kt"],
+    resource_dirs: ["app/src/main/res"],
+    static_libs: [
+        "kotlin-stdlib",
+        "kotlinx-coroutines-android",
+        "androidx.core_core-ktx",
+        "androidx.appcompat_appcompat",
+        "com.google.android.material_material",
+        "androidx-constraintlayout_constraintlayout",
+        "androidx.fragment_fragment-ktx",
+
+        "custom-androidx.room_room-ktx",
+        "androidx.paging_paging-runtime",
+        "androidx.recyclerview_recyclerview"
+    ],
+    plugins: [
+        "custom-androidx.room_room-compiler-plugin",
+    ],
+    platform_apis: true,
+    privileged: true,
+    manifest: "app/src/main/AndroidManifest.xml",
+    aaptflags: ["-A packages/apps/RoomPagingAOSPTest/app/src/main/assets"]
+}

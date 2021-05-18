@@ -1,0 +1,152 @@
+/**
+ * We use Room 2.3.0-alpha02, as that's what upstream AOSP master uses [1], and it provides support
+ * for integration with the androidx Paging library. We also add the room-ktx dependency for better
+ * Kotlin coroutines support.
+ *
+ * [1] https://android.googlesource.com/platform/prebuilts/sdk/+/refs/heads/master/current/androidx/Android.bp#2738
+ */
+
+java_import {
+    name: "custom-androidx.room_room-common-nodeps",
+    jars: ["m2/room-common-2.3.0-alpha02.jar"],
+    sdk_version: "30",
+    host_supported: true,
+}
+
+java_library_static {
+    name: "custom-androidx.room_room-common",
+    sdk_version: "30",
+    host_supported: true,
+    min_sdk_version: "24",
+    static_libs: [
+        "custom-androidx.room_room-common-nodeps",
+        "androidx.annotation_annotation",
+    ],
+    java_version: "1.7",
+}
+
+java_import_host {
+    name: "custom-androidx.room_room-compiler-nodeps",
+    jars: ["m2/room-compiler-2.3.0-alpha02.jar"],
+    sdk_version: "30",
+}
+
+java_import_host {
+    name: "custom-auto_common",
+    jars: ["m2/auto-common-0.10.jar"],
+}
+
+java_import_host {
+    name: "custom-auto_value_annotations",
+    jars: ["m2/auto-value-annotations-1.6.3.jar"],
+}
+
+java_library_host {
+    name: "custom-androidx.room_room-compiler",
+    static_libs: [
+        "custom-androidx.room_room-compiler-nodeps",
+        "custom-androidx.room_room-common",
+        "custom-androidx.room_room-migration",
+        "kotlin-stdlib",
+        "custom-auto_common",
+        "custom-auto_value_annotations",
+        "javapoet-prebuilt-jar",
+        "xerial-sqlite-jdbc",
+        "kotlinx-metadata-jvm",
+        "commons-codec",
+        "jetbrains-annotations",
+        "guava-21.0",
+    ],
+    java_version: "1.7",
+}
+
+java_import {
+    name: "custom-androidx.room_room-migration-nodeps",
+    jars: ["m2/room-migration-2.3.0-alpha02.jar"],
+    sdk_version: "30",
+    host_supported: true,
+}
+
+java_library_static {
+    name: "custom-androidx.room_room-migration",
+    sdk_version: "30",
+    host_supported: true,
+    min_sdk_version: "24",
+    static_libs: [
+        "custom-androidx.room_room-migration-nodeps",
+        "custom-androidx.room_room-common",
+        "kotlin-stdlib",
+        // gson-2.8.0.jar
+        "gson-prebuilt-jar",
+    ],
+    java_version: "1.7",
+}
+
+android_library_import {
+    name: "custom-androidx.room_room-runtime-nodeps",
+    aars: ["m2/room-runtime-2.3.0-alpha02.aar"],
+    sdk_version: "30",
+    min_sdk_version: "14",
+    static_libs: [
+        "custom-androidx.room_room-common",
+        // should be fine: 2.1.0-rc01
+        "androidx.sqlite_sqlite-framework",
+        "androidx.sqlite_sqlite",
+        // AOSP has 2.0.1
+        "androidx.arch.core_core-runtime",
+    ],
+}
+
+android_library {
+    name: "custom-androidx.room_room-runtime",
+    sdk_version: "30",
+    min_sdk_version: "14",
+    manifest: "m2/manifests/androidx.room_room-runtime/AndroidManifest.xml",
+    static_libs: [
+        "custom-androidx.room_room-runtime-nodeps",
+        "custom-androidx.room_room-common",
+        // should be fine: 2.1.0-rc01
+        "androidx.sqlite_sqlite-framework",
+        "androidx.sqlite_sqlite",
+        // AOSP has 2.0.1
+        "androidx.arch.core_core-runtime",
+    ],
+    java_version: "1.7",
+}
+
+java_plugin {
+    name: "custom-androidx.room_room-compiler-plugin",
+    static_libs: [
+        "custom-androidx.room_room-compiler",
+        "kotlin-reflect"
+    ],
+    processor_class: "androidx.room.RoomProcessor",
+    generates_api: true,
+}
+
+android_library_import {
+    name: "custom-androidx.room_room-ktx-nodeps",
+    aars: ["m2/room-ktx-2.3.0-alpha02.aar"],
+    sdk_version: "30",
+    min_sdk_version: "14",
+    static_libs: [
+        "custom-androidx.room_room-common",
+        "custom-androidx.room_room-runtime",
+        "kotlin-stdlib",
+        "kotlinx-coroutines-android"
+    ]
+}
+
+android_library {
+    name: "custom-androidx.room_room-ktx",
+    sdk_version: "30",
+    manifest: "m2/manifests/androidx.room_room-ktx/AndroidManifest.xml",
+    static_libs: [
+        "custom-androidx.room_room-ktx-nodeps",
+        "custom-androidx.room_room-common",
+        "custom-androidx.room_room-runtime",
+        "kotlin-stdlib",
+        "kotlinx-coroutines-android"
+    ],
+    java_version: "1.7",
+}
