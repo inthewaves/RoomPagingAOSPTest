@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">RoomPagingAOSPTest</string>
+    <string name="button_update">Update</string>
+    <string name="button_delete">Delete</string>
+</resources>
