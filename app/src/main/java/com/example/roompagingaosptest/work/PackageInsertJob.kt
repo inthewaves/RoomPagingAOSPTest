@@ -5,9 +5,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.example.roompagingaosptest.db.TestDatabase
 import com.example.roompagingaosptest.db.AppInfo
-import java.lang.Exception
+import com.example.roompagingaosptest.db.TestDatabase
 
 class PackageInsertJob(
     appContext: Context,

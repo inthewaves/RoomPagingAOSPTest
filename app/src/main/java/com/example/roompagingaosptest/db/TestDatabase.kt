@@ -9,7 +9,6 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import com.example.roompagingaosptest.AppInfoDao
 import java.util.UUID
-import java.util.concurrent.Executors
 
 const val CURRENT_DB_VERSION = 1
 

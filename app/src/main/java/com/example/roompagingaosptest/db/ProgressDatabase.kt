@@ -5,10 +5,6 @@ import androidx.annotation.GuardedBy
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverter
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
-import java.util.UUID
 import java.util.concurrent.Executors
 
 @Database(
