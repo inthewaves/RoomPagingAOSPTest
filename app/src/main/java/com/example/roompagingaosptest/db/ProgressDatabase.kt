@@ -24,7 +24,7 @@ abstract class ProgressDatabase : RoomDatabase() {
         @Volatile
         private var instance: ProgressDatabase? = null
 
-        private val executor = Executors.newFixedThreadPool(4)
+        private val executor = Executors.newFixedThreadPool(2)
 
         fun getInstance(context: Context): ProgressDatabase =
             synchronized(ProgressDatabase::class) {
