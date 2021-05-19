@@ -1,5 +1,6 @@
 package com.example.roompagingaosptest.paging
 
+import android.os.SystemClock
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -136,7 +137,7 @@ class AppInfoViewHolder(
                  */
 
                 newProgressLiveData?.removeObserver(newObserver)
-                newProgressLiveData = progressWatcher.getOrPutProgressForPackage(it.packageName)
+                newProgressLiveData = progressWatcher.getOrCreateProgressForPackage(it.packageName)
                     .apply { observe(lifecycle, newObserver) }
                 Log.d(TAG, "Progress is ${newProgressLiveData?.value}")
             }
@@ -157,6 +158,10 @@ class AppInfoViewHolder(
 
     @UiThread
     fun stopObserving() {
+        Log.d(TAG, "stopObserving(): appInfo=$appInfo")
+        appInfo?.let {
+            progressWatcher.removePackageIfComplete(it.packageName)
+        }
 
         progressBar.isVisible = false
         /*

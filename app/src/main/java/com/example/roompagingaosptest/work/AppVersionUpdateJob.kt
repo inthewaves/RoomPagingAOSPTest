@@ -3,6 +3,7 @@ package com.example.roompagingaosptest.work
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.collection.arrayMapOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -31,10 +32,29 @@ class AppVersionUpdateJob(
     }
 
     override suspend fun doWork(): Result {
+        val packageManager = applicationContext.packageManager
+        val packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+
+        withContext(Dispatchers.Main) {
+            Log.d("AppVersionUpdateJob", "packages: ${packages.toList().joinToString("\n")}")
+        }
+
+        val graphene = packages.filter {
+            it.packageName.contains("graphene") ||
+                    it.packageName.contains("example")
+        }
+        withContext(Dispatchers.Main) {
+            val apkDirs = graphene.map { it.sourceDir }
+            Log.d("AppVersionUpdateJob", "graphene: $graphene\n " +
+                    "apk dirs: $apkDirs")
+
+            Log.d("AppVersionUpdateJob", "can read apk dirs? ${apkDirs.map { File(it).canRead() }}")
+        }
+
         val database = TestDatabase.getInstance(applicationContext)
         val input = Input(inputData)
         val updaterWatcher = UpdaterWatcher.getInstance(applicationContext)
-        val progress = updaterWatcher.getOrPutProgressForPackage(input.pkg) as MutableLiveData<WorkerProgress>
+        val progress = updaterWatcher.getOrCreateProgressForPackage(input.pkg) as MutableLiveData<WorkerProgress>
         var percentage: Double = 0.0
         setProgress(Progress(0.0).progressData)
         progress.postValue(WorkerProgress.ZERO)
@@ -71,8 +91,17 @@ class AppVersionUpdateJob(
         private val appInfoMap: MutableMap<String, LiveData<WorkerProgress>> = arrayMapOf()
         private val workManager = WorkManager.getInstance(context)
 
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         fun removePackage(pkg: String) {
             synchronized(appInfoMap) { appInfoMap.remove(pkg) }
+        }
+
+        fun removePackageIfComplete(pkg: String) {
+            synchronized(appInfoMap) {
+                if (appInfoMap[pkg]?.value == WorkerProgress.FINISHED) {
+                    appInfoMap.remove(pkg)
+                }
+            }
         }
 
         fun getProgressForPackageOrNull(pkg: String): LiveData<WorkerProgress>? =
@@ -80,7 +109,7 @@ class AppVersionUpdateJob(
                 appInfoMap[pkg]
             }
 
-        fun getOrPutProgressForPackage(pkg: String): LiveData<WorkerProgress> =
+        fun getOrCreateProgressForPackage(pkg: String): LiveData<WorkerProgress> =
             synchronized(appInfoMap) {
                 appInfoMap.getOrPut(
                     pkg,
