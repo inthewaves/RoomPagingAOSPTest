@@ -1,6 +1,5 @@
 package com.example.roompagingaosptest.paging
 
-import android.os.SystemClock
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -17,15 +16,23 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import androidx.work.await
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.MainActivityViewModel
 import com.example.roompagingaosptest.R
+import com.example.roompagingaosptest.db.ProgressDatabase
 import com.example.roompagingaosptest.work.AppVersionUpdateJob
 import com.example.roompagingaosptest.work.WorkerProgress
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.flow.cancellable
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -62,6 +69,27 @@ class AppInfoViewHolder(
 
     private var newProgressLiveData: LiveData<WorkerProgress>? = null
 
+    private val database = ProgressDatabase.getInstance(applicationContext)
+
+    private fun relaunchUpdateObserverJob(packageName: String) {
+        progressJob?.cancel()
+        progressJob = lifecycle.lifecycleScope.launch {
+            database.appUpdateProgressDao().getProgressForPackage(packageName)
+                .flowOn(Dispatchers.IO)
+                .cancellable()
+                .conflate()
+                .distinctUntilChanged()
+                .collectLatest { percentage ->
+                    percentage ?: return@collectLatest
+
+                    progressBar.isVisible = true
+                    progressBar.progress = (100 * percentage).roundToInt()
+                }
+        }
+    }
+
+    private var progressJob: Job? = null
+
     private val newObserver = Observer<WorkerProgress> { progress ->
         if (progress == WorkerProgress.FINISHED) {
             progressBar.isVisible = false
@@ -79,6 +107,8 @@ class AppInfoViewHolder(
         }
 
         override fun onChanged(workInfoList: List<WorkInfo>?) {
+            return
+
             val workInfo = workInfoList?.find { !it.state.isFinished }
             if (workInfo == null) {
                 Log.d(TAG, "${appInfo?.packageName}: FAILED TO FIND IN PROGRESS JOB")
@@ -125,7 +155,7 @@ class AppInfoViewHolder(
 
                 workManager.enqueueUniqueWork(
                     AppVersionUpdateJob.createName(it),
-                    ExistingWorkPolicy.KEEP,
+                    ExistingWorkPolicy.APPEND_OR_REPLACE,
                     workRequest
                 )
 
@@ -140,6 +170,15 @@ class AppInfoViewHolder(
                 newProgressLiveData = progressWatcher.getOrCreateProgressForPackage(it.packageName)
                     .apply { observe(lifecycle, newObserver) }
                 Log.d(TAG, "Progress is ${newProgressLiveData?.value}")
+
+                lifecycle.lifecycleScope.launch {
+                    val list = workManager
+                        .getWorkInfosForUniqueWork(AppVersionUpdateJob.createName(it))
+                        .await()
+                    Log.d(TAG, "All work for this package $it: $list")
+                }
+
+                relaunchUpdateObserverJob(it.packageName)
             }
         }
 
@@ -163,6 +202,7 @@ class AppInfoViewHolder(
             progressWatcher.removePackageIfComplete(it.packageName)
         }
 
+
         progressBar.isVisible = false
         /*
         progressBar.setProgressCompat(0, false)
@@ -172,6 +212,8 @@ class AppInfoViewHolder(
          */
 
         newProgressLiveData?.removeObservers(lifecycle)
+
+        progressJob?.cancel()
     }
 
     @UiThread
@@ -193,7 +235,7 @@ class AppInfoViewHolder(
         this.appInfo = appInfo
         newProgressLiveData?.removeObserver(newObserver)
         newProgressLiveData = appInfo
-            ?.let { progressWatcher.getProgressForPackageOrNull(it.packageName) }
+            ?.let { progressWatcher.getOrCreateProgressForPackage(it.packageName) }
             ?.apply {
                 observe(lifecycle, newObserver)
                 newObserver.onChanged(this.value)
@@ -201,5 +243,7 @@ class AppInfoViewHolder(
         appName.text = appInfo?.packageName ?: ""
         versionCode.text = appInfo?.versionCode?.toString() ?: ""
         lastUpdate.text = appInfo?.lastUpdated?.toString() ?: ""
+
+        appInfo?.let { relaunchUpdateObserverJob(it.packageName) }
     }
 }

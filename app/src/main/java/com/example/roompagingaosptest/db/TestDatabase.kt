@@ -9,6 +9,7 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import com.example.roompagingaosptest.AppInfoDao
 import java.util.UUID
+import java.util.concurrent.Executors
 
 const val CURRENT_DB_VERSION = 1
 
@@ -40,6 +41,7 @@ abstract class TestDatabase : RoomDatabase() {
         @GuardedBy("TestDatabase::class")
         @Volatile
         private var instance: TestDatabase? = null
+        private val executor = Executors.newFixedThreadPool(8)
 
         fun getInstance(context: Context): TestDatabase =
             synchronized(TestDatabase::class) {
@@ -48,6 +50,8 @@ abstract class TestDatabase : RoomDatabase() {
 
         private fun buildDatabaseInstance(context: Context): TestDatabase =
             Room.databaseBuilder(context, TestDatabase::class.java, DATABASE_NAME)
+                .setQueryExecutor(executor)
+                .setTransactionExecutor(executor)
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
     }
