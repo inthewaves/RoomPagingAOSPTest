@@ -16,12 +16,24 @@ android {
         versionName "1.0"
     }
 
+    signingConfigs {
+        release {
+            keyAlias = 'androiddebugkey'
+            keyPassword = 'android'
+            storeFile = new File("${System.properties['user.home']}/.android/debug.keystore")
+            storePassword = 'android'
+            storeType = "jks"
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
         }
         release {
             minifyEnabled false
+            applicationIdSuffix ".debug"
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
