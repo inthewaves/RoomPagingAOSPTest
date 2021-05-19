@@ -31,12 +31,15 @@ android {
             applicationIdSuffix ".debug"
         }
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             applicationIdSuffix ".debug"
             signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+    aaptOptions {
+        noCompress "apk"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

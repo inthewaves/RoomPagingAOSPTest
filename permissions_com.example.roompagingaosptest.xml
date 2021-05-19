@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permissions>
+    <privapp-permissions package="com.example.roompagingaosptest">
+        <permission name="android.permission.INSTALL_PACKAGES"/>
+    </privapp-permissions>
+    <!--python3 development/tools/privapp_permissions/privapp_permissions.py out/target/product/sargo/system/priv-app/RoomPagingAOSPTest/RoomPagingAOSPTest.apk
+        https://cs.android.com/android/platform/superproject/+/master:bootable/recovery/updater_sample/README.md;l=186?q=privapp-permissions%20whitelist
+        https://source.android.com/devices/tech/config/perms-allowlist -->
+</permissions>

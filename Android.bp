@@ -20,8 +20,16 @@ android_app {
     plugins: [
         "custom-androidx.room_room-compiler-plugin",
     ],
+    required: ["permissions_com.example.roompagingaosptest.xml"],
     platform_apis: true,
     privileged: true,
     manifest: "app/src/main/AndroidManifest.xml",
     aaptflags: ["-A packages/apps/RoomPagingAOSPTest/app/src/main/assets"]
+}
+
+prebuilt_etc {
+    name: "permissions_com.example.roompagingaosptest.xml",
+    sub_dir: "permissions",
+    src: "permissions_com.example.roompagingaosptest.xml",
+    filename_from_src: true,
 }
