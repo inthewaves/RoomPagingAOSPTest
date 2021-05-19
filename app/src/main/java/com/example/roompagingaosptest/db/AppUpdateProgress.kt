@@ -2,22 +2,18 @@ package com.example.roompagingaosptest.db
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import java.util.*
 
 @Entity(
     indices = [
-        Index("packageName")
+        Index(value = ["packageName", "percentage"])
     ]
 )
-data class AppInfo(
+data class AppUpdateProgress(
     @ColumnInfo @PrimaryKey
     val packageName: String,
     @ColumnInfo
-    val versionCode: Int,
-    @ColumnInfo
-    val lastUpdated: Long,
-    @ColumnInfo
-    val updateJobId: UUID? = null
+    val percentage: Double
 )

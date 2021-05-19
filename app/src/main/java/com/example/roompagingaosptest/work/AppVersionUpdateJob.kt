@@ -15,7 +15,11 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.example.roompagingaosptest.db.TestDatabase
 import com.example.roompagingaosptest.db.AppInfo
+import com.example.roompagingaosptest.db.ProgressDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
@@ -52,37 +56,57 @@ class AppVersionUpdateJob(
         }
 
         val database = TestDatabase.getInstance(applicationContext)
+        val appUpdateProgressDao = ProgressDatabase.getInstance(applicationContext)
+            .appUpdateProgressDao()
         val input = Input(inputData)
         val updaterWatcher = UpdaterWatcher.getInstance(applicationContext)
         val progress = updaterWatcher.getOrCreateProgressForPackage(input.pkg) as MutableLiveData<WorkerProgress>
         var percentage: Double = 0.0
-        setProgress(Progress(0.0).progressData)
+        // setProgress(Progress(0.0).progressData)
+        appUpdateProgressDao.setProgressForPackage(input.pkg, 0.0)
         progress.postValue(WorkerProgress.ZERO)
-        repeat(10 * 66) {
-            delay(100L)
-            percentage += 0.001
-            setProgress(Progress(percentage).progressData)
+        repeat(10 * 33) {
+            delay(50L)
+            percentage += 0.002
+            // setProgress(Progress(percentage).progressData)
             progress.percentage = percentage
+            appUpdateProgressDao.setProgressForPackage(input.pkg, percentage)
         }
-        setProgress(Progress(2/3.0).progressData)
+        // setProgress(Progress(2/3.0).progressData)
         progress.percentage = 2/3.0
+        appUpdateProgressDao.setProgressForPackage(input.pkg, 2/3.0)
         delay(2500L)
 
-        val success = database.withTransaction {
-            val dao = database.appInfoDao()
-            val appInfo = dao.getAppInfo(input.pkg) ?: return@withTransaction false
-            dao.updateVersionCode(appInfo.packageName, appInfo.versionCode + 1L)
-            setProgress(Progress(0.9).progressData)
-            progress.percentage = 0.9
-            delay(2500L)
-            true
+        val success =  coroutineScope {
+            val progressActor = actor<Double>(capacity = Channel.CONFLATED) {
+                for (percentage in channel) {
+                    appUpdateProgressDao.setProgressForPackage(input.pkg, percentage)
+                }
+            }
+
+            val success = database.withTransaction {
+                val dao = database.appInfoDao()
+                val appInfo = dao.getAppInfo(input.pkg) ?: return@withTransaction false
+                dao.updateVersionCode(appInfo.packageName, appInfo.versionCode + 1L)
+                // setProgress(Progress(0.9).progressData)
+                progress.percentage = 0.9
+                progressActor.offer(0.9)
+
+                delay(2500L)
+                true
+            }
+            progressActor.close()
+
+            success
         }
 
-        setProgress(Progress(1.0).progressData)
+        // setProgress(Progress(1.0).progressData)
         progress.postValue(WorkerProgress.FINISHED)
+        appUpdateProgressDao.setProgressForPackage(input.pkg, 1.0)
         delay(2500L)
 
         updaterWatcher.removePackage(input.pkg)
+        appUpdateProgressDao.deletePackage(input.pkg)
         return if (success) Result.success() else Result.failure()
     }
 
