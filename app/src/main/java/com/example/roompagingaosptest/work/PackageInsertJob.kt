@@ -22,7 +22,7 @@ class PackageInsertJob(
                 throw CantMakeException("invalid package name")
             }
 
-            if (newVersion == null || newVersion < 1) {
+            if (newVersion < 1) {
                 throw CantMakeException("invalid version --- needs to be positive integer")
             }
 
