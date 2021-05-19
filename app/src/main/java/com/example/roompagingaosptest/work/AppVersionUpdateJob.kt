@@ -1,6 +1,8 @@
 package com.example.roompagingaosptest.work
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.util.Log
 import androidx.collection.arrayMapOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -12,9 +14,11 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.example.roompagingaosptest.db.TestDatabase
 import com.example.roompagingaosptest.db.AppInfo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import java.io.File
 
 class AppVersionUpdateJob(
     context: Context,
@@ -30,7 +34,7 @@ class AppVersionUpdateJob(
         val database = TestDatabase.getInstance(applicationContext)
         val input = Input(inputData)
         val updaterWatcher = UpdaterWatcher.getInstance(applicationContext)
-        val progress = updaterWatcher.getProgressForPackageBlocking(input.pkg) as MutableLiveData<WorkerProgress>
+        val progress = updaterWatcher.getOrPutProgressForPackage(input.pkg) as MutableLiveData<WorkerProgress>
         var percentage: Double = 0.0
         setProgress(Progress(0.0).progressData)
         progress.postValue(WorkerProgress.ZERO)
@@ -71,7 +75,12 @@ class AppVersionUpdateJob(
             synchronized(appInfoMap) { appInfoMap.remove(pkg) }
         }
 
-        fun getProgressForPackageBlocking(pkg: String): LiveData<WorkerProgress> =
+        fun getProgressForPackageOrNull(pkg: String): LiveData<WorkerProgress>? =
+            synchronized(appInfoMap) {
+                appInfoMap[pkg]
+            }
+
+        fun getOrPutProgressForPackage(pkg: String): LiveData<WorkerProgress> =
             synchronized(appInfoMap) {
                 appInfoMap.getOrPut(
                     pkg,

@@ -136,7 +136,7 @@ class AppInfoViewHolder(
                  */
 
                 newProgressLiveData?.removeObserver(newObserver)
-                newProgressLiveData = progressWatcher.getProgressForPackageBlocking(it.packageName)
+                newProgressLiveData = progressWatcher.getOrPutProgressForPackage(it.packageName)
                     .apply { observe(lifecycle, newObserver) }
                 Log.d(TAG, "Progress is ${newProgressLiveData?.value}")
             }
@@ -187,7 +187,8 @@ class AppInfoViewHolder(
          */
         this.appInfo = appInfo
         newProgressLiveData?.removeObserver(newObserver)
-        newProgressLiveData = appInfo?.let { progressWatcher.getProgressForPackageBlocking(it.packageName) }
+        newProgressLiveData = appInfo
+            ?.let { progressWatcher.getProgressForPackageOrNull(it.packageName) }
             ?.apply {
                 observe(lifecycle, newObserver)
                 newObserver.onChanged(this.value)
