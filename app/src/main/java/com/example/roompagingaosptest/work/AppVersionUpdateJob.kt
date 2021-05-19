@@ -13,9 +13,9 @@ import androidx.work.Data
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.example.roompagingaosptest.db.TestDatabase
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.ProgressDatabase
+import com.example.roompagingaosptest.db.TestDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
@@ -63,24 +63,24 @@ class AppVersionUpdateJob(
         val progress = updaterWatcher.getOrCreateProgressForPackage(input.pkg) as MutableLiveData<WorkerProgress>
         var percentage: Double = 0.0
         // setProgress(Progress(0.0).progressData)
-        appUpdateProgressDao.setProgressForPackage(input.pkg, 0.0)
+        appUpdateProgressDao.updateProgressForPackage(input.pkg, 0.0)
         progress.postValue(WorkerProgress.ZERO)
         repeat(10 * 33) {
             delay(50L)
             percentage += 0.002
             // setProgress(Progress(percentage).progressData)
             progress.percentage = percentage
-            appUpdateProgressDao.setProgressForPackage(input.pkg, percentage)
+            appUpdateProgressDao.updateProgressForPackage(input.pkg, percentage)
         }
         // setProgress(Progress(2/3.0).progressData)
         progress.percentage = 2/3.0
-        appUpdateProgressDao.setProgressForPackage(input.pkg, 2/3.0)
+        appUpdateProgressDao.updateProgressForPackage(input.pkg, 2/3.0)
         delay(2500L)
 
         val success =  coroutineScope {
             val progressActor = actor<Double>(capacity = Channel.CONFLATED) {
                 for (percentage in channel) {
-                    appUpdateProgressDao.setProgressForPackage(input.pkg, percentage)
+                    appUpdateProgressDao.updateProgressForPackage(input.pkg, percentage)
                 }
             }
 
@@ -100,7 +100,10 @@ class AppVersionUpdateJob(
         delay(2500L)
         // setProgress(Progress(1.0).progressData)
         progress.postValue(WorkerProgress.FINISHED)
-        appUpdateProgressDao.setProgressForPackage(input.pkg, 1.0)
+        appUpdateProgressDao.updateProgressForPackage(input.pkg, 1.0)
+        withContext(Dispatchers.Main) {
+            Log.d(WORK_TAG, "${input.pkg} has reached 100%")
+        }
         delay(2500L)
 
         updaterWatcher.removePackage(input.pkg)

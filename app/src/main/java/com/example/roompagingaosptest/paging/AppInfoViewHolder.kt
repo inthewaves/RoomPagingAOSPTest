@@ -17,22 +17,19 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.await
-import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.MainActivityViewModel
 import com.example.roompagingaosptest.R
+import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.ProgressDatabase
 import com.example.roompagingaosptest.work.AppVersionUpdateJob
 import com.example.roompagingaosptest.work.WorkerProgress
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.flow.cancellable
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -75,13 +72,13 @@ class AppInfoViewHolder(
         progressJob?.cancel()
         progressJob = lifecycle.lifecycleScope.launch {
             database.appUpdateProgressDao().getProgressForPackage(packageName)
-                .cancellable()
                 .conflate()
                 .distinctUntilChanged()
-                .collectLatest { percentage ->
+                .collect { percentage ->
+                    Log.d(TAG, "${appInfo?.packageName} collected $percentage")
                     if (percentage == null) {
                         progressBar.isVisible = false
-                        return@collectLatest
+                        return@collect
                     }
 
                     progressBar.isVisible = true
@@ -93,6 +90,8 @@ class AppInfoViewHolder(
     private var progressJob: Job? = null
 
     private val newObserver = Observer<WorkerProgress> { progress ->
+        return@Observer
+
         if (progress == WorkerProgress.FINISHED) {
             progressBar.isVisible = false
             return@Observer
@@ -205,7 +204,7 @@ class AppInfoViewHolder(
         }
 
 
-        progressBar.isVisible = false
+        // progressBar.isVisible = false
         /*
         progressBar.setProgressCompat(0, false)
         updateObserver.toggleNewAppData()
