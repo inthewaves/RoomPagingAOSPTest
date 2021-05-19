@@ -91,15 +91,13 @@ class AppVersionUpdateJob(
                 // setProgress(Progress(0.9).progressData)
                 progress.percentage = 0.9
                 progressActor.offer(0.9)
-
-                delay(2500L)
                 true
             }
             progressActor.close()
 
             success
         }
-
+        delay(2500L)
         // setProgress(Progress(1.0).progressData)
         progress.postValue(WorkerProgress.FINISHED)
         appUpdateProgressDao.setProgressForPackage(input.pkg, 1.0)

@@ -75,12 +75,14 @@ class AppInfoViewHolder(
         progressJob?.cancel()
         progressJob = lifecycle.lifecycleScope.launch {
             database.appUpdateProgressDao().getProgressForPackage(packageName)
-                .flowOn(Dispatchers.IO)
                 .cancellable()
                 .conflate()
                 .distinctUntilChanged()
                 .collectLatest { percentage ->
-                    percentage ?: return@collectLatest
+                    if (percentage == null) {
+                        progressBar.isVisible = false
+                        return@collectLatest
+                    }
 
                     progressBar.isVisible = true
                     progressBar.progress = (100 * percentage).roundToInt()
