@@ -39,7 +39,7 @@ class AppInfoViewHolder(
         private const val TAG = "AppInfoViewHolder"
     }
 
-    private val lifecycle = parent.context as LifecycleOwner
+    private val lifecycleScope = (parent.context as LifecycleOwner).lifecycleScope
 
     var appInfo: AppInfo? = null
         private set
@@ -60,7 +60,7 @@ class AppInfoViewHolder(
 
     private fun relaunchUpdateObserverJob(packageName: String) {
         progressJob?.cancel()
-        progressJob = lifecycle.lifecycleScope.launch {
+        progressJob = lifecycleScope.launch {
             database.appUpdateProgressDao().getProgressForPackage(packageName)
                 .conflate()
                 .distinctUntilChanged()
@@ -76,9 +76,8 @@ class AppInfoViewHolder(
                 }
         }
     }
+
     private var progressJob: Job? = null
-
-
     init {
         updateButton.setOnClickListener {
             appInfo?.let { it ->
@@ -95,7 +94,7 @@ class AppInfoViewHolder(
                 )
 
 
-                lifecycle.lifecycleScope.launch {
+                lifecycleScope.launch {
                     val list = workManager
                         .getWorkInfosForUniqueWork(AppVersionUpdateJob.createName(it))
                         .await()
@@ -106,7 +105,7 @@ class AppInfoViewHolder(
             }
         }
 
-        lifecycle.lifecycleScope.launch {
+        lifecycleScope.launch {
             val deleteAppInfoActor = actor<AppInfo>(capacity = Channel.CONFLATED) {
                 for (appInfo in channel) {
                     viewModel.deleteAppInfo(appInfo.packageName)
