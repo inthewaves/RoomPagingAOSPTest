@@ -1,6 +1,7 @@
 package com.example.roompagingaosptest.paging
 
 import android.text.Html
+import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -75,10 +76,15 @@ class AppInfoViewHolder(
                     <li>This is my thing.</li>
                     <li>This is my other thing.</li>
                 </ul>
-                <p>This is a paragraphed used to do my stuff.</p>
-            """.trimIndent(),
+                <p style="color:red;">Oh this is red now.</p>
+                
+                <h3>Header</h3>
+                <p>This is a header containing my things.
+                <a href="http://example.com">This is a link that goes to example.com</a>.</p>
+            """.trimIndent().trimEnd('\n'),
             0
         )
+        releaseNotes.movementMethod = LinkMovementMethod.getInstance()
     }
     private val workManager = WorkManager.getInstance(itemView.context)
     private val database = ProgressDatabase.getInstance(parent.context)
