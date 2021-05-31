@@ -2,11 +2,17 @@ package com.example.roompagingaosptest.paging
 
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.Transformation
 import android.widget.Button
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.UiThread
 import androidx.core.view.isVisible
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -37,6 +43,7 @@ class AppInfoViewHolder(
 ) {
     companion object {
         private const val TAG = "AppInfoViewHolder"
+        private val expandInterpolator = FastOutSlowInInterpolator()
     }
 
     private val lifecycleScope = (parent.context as LifecycleOwner).lifecycleScope
@@ -47,6 +54,10 @@ class AppInfoViewHolder(
     private val appName: TextView = itemView.findViewById(R.id.appTitleTextView)
     private val versionCode: TextView = itemView.findViewById(R.id.versionCodeTextView)
     private val lastUpdate: TextView = itemView.findViewById(R.id.lastUpdatedTextView)
+
+    private val expandIcon: ImageView = itemView.findViewById(R.id.expandIconImageView)
+    private val expandLinearLayout: LinearLayout = itemView.findViewById(R.id.expandLinearLayout)
+
     private val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
     private val updateButton: Button = itemView.findViewById(R.id.updateButton)
     private val progressBar: CircularProgressIndicator = itemView.findViewById(R.id.progressBar)
@@ -80,15 +91,15 @@ class AppInfoViewHolder(
     private var progressJob: Job? = null
     init {
         updateButton.setOnClickListener {
-            appInfo?.let { it ->
+            appInfo?.let { appInfo ->
                 val tag = AppVersionUpdateJob.WORK_TAG
                 val workRequest = OneTimeWorkRequestBuilder<AppVersionUpdateJob>()
                     .addTag(tag)
-                    .setInputData(AppVersionUpdateJob.Input(it).inputData)
+                    .setInputData(AppVersionUpdateJob.Input(appInfo).inputData)
                     .build()
 
                 workManager.enqueueUniqueWork(
-                    AppVersionUpdateJob.createName(it),
+                    AppVersionUpdateJob.createName(appInfo),
                     ExistingWorkPolicy.APPEND_OR_REPLACE,
                     workRequest
                 )
@@ -96,12 +107,12 @@ class AppInfoViewHolder(
 
                 lifecycleScope.launch {
                     val list = workManager
-                        .getWorkInfosForUniqueWork(AppVersionUpdateJob.createName(it))
+                        .getWorkInfosForUniqueWork(AppVersionUpdateJob.createName(appInfo))
                         .await()
-                    Log.d(TAG, "All work for this package $it: $list")
+                    Log.d(TAG, "All work for this package $appInfo: $list")
                 }
 
-                relaunchUpdateObserverJob(it.packageName)
+                relaunchUpdateObserverJob(appInfo.packageName)
             }
         }
 
@@ -124,6 +135,63 @@ class AppInfoViewHolder(
         progressJob?.cancel()
     }
 
+    private fun setExpandState(icon: View, expand: Boolean) {
+        val isExpanded: Boolean = icon.tag as? Boolean ?: false
+        icon.apply {
+            // Don't do any animations if trying to request an expand state that we're already
+            // in.
+            if (expand == isExpanded) {
+                if (tag == null) tag = expand
+                return
+            }
+            animate()
+                .setDuration(200L)
+                .rotation(if (isExpanded) 0f else 180f)
+            tag = !isExpanded
+        }
+        expandLinearLayout.apply {
+            measure(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            val currentHeight = measuredHeight
+            val animation: Animation = if (!isExpanded) {
+                layoutParams.height = 0
+                isVisible = true
+
+                object : Animation() {
+                    override fun applyTransformation(
+                        interpolatedTime: Float,
+                        t: Transformation?
+                    ) {
+                        layoutParams.height = if (interpolatedTime == 1f) {
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        } else {
+                            (currentHeight * interpolatedTime).toInt()
+                        }
+                        requestLayout()
+                    }
+                }
+            } else {
+                object : Animation() {
+                    override fun applyTransformation(
+                        interpolatedTime: Float,
+                        t: Transformation?
+                    ) {
+                        if (interpolatedTime == 1f) {
+                            isVisible = false
+                        } else {
+                            layoutParams.height = currentHeight -
+                                    (currentHeight * interpolatedTime).toInt()
+                            requestLayout()
+                        }
+                    }
+                }
+            }.apply {
+                duration = 300L
+                interpolator = expandInterpolator
+            }
+            startAnimation(animation)
+        }
+    }
+
     @UiThread
     fun bind(appInfo: AppInfo?) {
         this.appInfo = appInfo
@@ -131,5 +199,13 @@ class AppInfoViewHolder(
         versionCode.text = appInfo?.versionCode?.toString() ?: ""
         lastUpdate.text = appInfo?.lastUpdated?.toString() ?: ""
         appInfo?.let { relaunchUpdateObserverJob(it.packageName) }
+
+        // Collapse when rebinded so that other items don't magically appear as expanded when
+        // scrolling.
+        setExpandState(expandIcon, false)
+        expandIcon.setOnClickListener { icon ->
+            val isExpended = icon.tag as? Boolean ?: false
+            setExpandState(icon, !isExpended)
+        }
     }
 }
