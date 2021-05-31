@@ -4,4 +4,14 @@
     <string name="button_delete">Delete</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="some_html_stuff">
+        <p>
+            This is a paragraphed used to do my stuff.
+        </p>
+        <ul>
+            <li>This is my thing.</li>
+            <li>This is my other thing.</li>
+        </ul>
+    </string>
 </resources>

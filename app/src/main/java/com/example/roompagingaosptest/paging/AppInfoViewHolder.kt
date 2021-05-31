@@ -1,5 +1,6 @@
 package com.example.roompagingaosptest.paging
 
+import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -65,6 +66,19 @@ class AppInfoViewHolder(
         progressBar.isVisible = false
         progressBar.isIndeterminate = false
         progressBar.max = 100
+
+        val releaseNotes: TextView = itemView.findViewById(R.id.releaseNotesTextView)
+        releaseNotes.text = Html.fromHtml(
+            """
+                <p>This is a paragraphed used to do my stuff.</p>
+                <ul>
+                    <li>This is my thing.</li>
+                    <li>This is my other thing.</li>
+                </ul>
+                <p>This is a paragraphed used to do my stuff.</p>
+            """.trimIndent(),
+            0
+        )
     }
     private val workManager = WorkManager.getInstance(itemView.context)
     private val database = ProgressDatabase.getInstance(parent.context)
@@ -135,24 +149,38 @@ class AppInfoViewHolder(
         progressJob?.cancel()
     }
 
-    private fun setExpandState(icon: View, expand: Boolean) {
+    private fun setExpandState(icon: View, newExpandState: Boolean, shouldAnimate: Boolean) {
         val isExpanded: Boolean = icon.tag as? Boolean ?: false
         icon.apply {
             // Don't do any animations if trying to request an expand state that we're already
             // in.
-            if (expand == isExpanded) {
-                if (tag == null) tag = expand
+            if (newExpandState == isExpanded) {
+                if (tag == null) tag = newExpandState
                 return
             }
-            animate()
-                .setDuration(200L)
-                .rotation(if (isExpanded) 0f else 180f)
+
+            val newRotation = if (isExpanded) 0f else 180f
+            if (shouldAnimate) {
+                animate()
+                    .setDuration(200L)
+                    .rotation(newRotation)
+            } else {
+                rotation = newRotation
+            }
             tag = !isExpanded
         }
         expandLinearLayout.apply {
+            if (!shouldAnimate) {
+                layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                isVisible = newExpandState
+                alpha = 1.0f
+                return
+            }
+
             measure(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             val currentHeight = measuredHeight
             val animation: Animation = if (!isExpanded) {
+                alpha = 0.0f
                 layoutParams.height = 0
                 isVisible = true
 
@@ -161,6 +189,7 @@ class AppInfoViewHolder(
                         interpolatedTime: Float,
                         t: Transformation?
                     ) {
+                        alpha = interpolatedTime
                         layoutParams.height = if (interpolatedTime == 1f) {
                             ViewGroup.LayoutParams.WRAP_CONTENT
                         } else {
@@ -170,11 +199,13 @@ class AppInfoViewHolder(
                     }
                 }
             } else {
+                alpha = 1.0f
                 object : Animation() {
                     override fun applyTransformation(
                         interpolatedTime: Float,
                         t: Transformation?
                     ) {
+                        alpha = 1.0f - interpolatedTime
                         if (interpolatedTime == 1f) {
                             isVisible = false
                         } else {
@@ -185,7 +216,7 @@ class AppInfoViewHolder(
                     }
                 }
             }.apply {
-                duration = 300L
+                duration = 250L
                 interpolator = expandInterpolator
             }
             startAnimation(animation)
@@ -202,10 +233,10 @@ class AppInfoViewHolder(
 
         // Collapse when rebinded so that other items don't magically appear as expanded when
         // scrolling.
-        setExpandState(expandIcon, false)
+        setExpandState(expandIcon, newExpandState = false, shouldAnimate = false)
         expandIcon.setOnClickListener { icon ->
             val isExpended = icon.tag as? Boolean ?: false
-            setExpandState(icon, !isExpended)
+            setExpandState(icon, !isExpended, true)
         }
     }
 }
