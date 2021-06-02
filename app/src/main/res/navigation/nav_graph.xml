@@ -9,5 +9,14 @@
         android:id="@+id/mainActivityFragment"
         android:name="com.example.roompagingaosptest.MainActivityFragment"
         android:label="fragment_main_activity"
-        tools:layout="@layout/fragment_main_activity" />
+        tools:layout="@layout/fragment_main_activity" >
+        <action
+            android:id="@+id/action_mainActivityFragment_to_updateAppsFragment"
+            app:destination="@id/updateAppsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/updateAppsFragment"
+        android:name="com.example.roompagingaosptest.UpdateAppsFragment"
+        android:label="fragment_update_apps"
+        tools:layout="@layout/fragment_update_apps" />
 </navigation>
