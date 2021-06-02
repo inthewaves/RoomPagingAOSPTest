@@ -1,13 +1,22 @@
 android_app {
     name: "RoomPagingAOSPTest",
-    srcs: ["app/src/main/**/*.kt"],
-    resource_dirs: ["app/src/main/res"],
+    srcs: [
+        "app/src/main/**/*.kt",
+        "app/src/main/**/*.java"
+    ],
+    resource_dirs: [
+        "app/src/main/res",
+        "app/src/main/java/com/google/android/material/progressindicator/res",
+        "app/src/main/java/com/google/android/material/progressindicator/res-public"
+    ],
     static_libs: [
         "kotlin-stdlib",
         "kotlinx-coroutines-android",
+        "kotlin-reflect",
+
         "androidx.core_core-ktx",
         "androidx.appcompat_appcompat",
-        "custom-com.google.android.material_material",
+        "com.google.android.material_material",
         "androidx-constraintlayout_constraintlayout",
         "androidx.fragment_fragment-ktx",
 
@@ -15,11 +24,13 @@ android_app {
         "androidx.paging_paging-runtime",
         "androidx.recyclerview_recyclerview",
         "custom-work-runtime-ktx",
-        "kotlin-reflect"
+
+        "androidx.navigation_navigation-fragment-ktx",
+        "androidx.navigation_navigation-ui-ktx",
+        // for Material's progressindicator
+        "androidx.dynamicanimation_dynamicanimation",
     ],
-    plugins: [
-        "custom-androidx.room_room-compiler-plugin",
-    ],
+    plugins: ["custom-androidx.room_room-compiler-plugin"],
     required: ["permissions_com.example.roompagingaosptest.xml"],
     platform_apis: true,
     privileged: true,
