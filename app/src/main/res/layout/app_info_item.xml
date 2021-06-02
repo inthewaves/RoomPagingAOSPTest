@@ -61,16 +61,16 @@
         app:layout_constraintTop_toBottomOf="@+id/appTitleTextView"
         tools:text="54443" />
 
-    <com.google.android.material.progressindicator.CircularProgressIndicator
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="8dp"
-        android:indeterminate="false"
-        app:layout_constraintBottom_toTopOf="@+id/updateButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <com.example.roompagingaosptest.view.CircleProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            app:layout_constraintBottom_toTopOf="@+id/updateButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:progressBarThickness="10dp" />
 
     <ImageView
         android:id="@+id/expandIconImageView"

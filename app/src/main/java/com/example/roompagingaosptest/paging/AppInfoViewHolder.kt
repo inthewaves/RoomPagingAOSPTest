@@ -26,8 +26,8 @@ import com.example.roompagingaosptest.MainActivityViewModel
 import com.example.roompagingaosptest.R
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.ProgressDatabase
+import com.example.roompagingaosptest.view.CircleProgressBar
 import com.example.roompagingaosptest.work.AppVersionUpdateJob
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
@@ -35,7 +35,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 class AppInfoViewHolder(
     parent: ViewGroup,
@@ -62,10 +61,9 @@ class AppInfoViewHolder(
 
     private val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
     private val updateButton: Button = itemView.findViewById(R.id.updateButton)
-    private val progressBar: CircularProgressIndicator = itemView.findViewById(R.id.progressBar)
+    private val progressBar: CircleProgressBar = itemView.findViewById(R.id.progressBar)
     init {
         progressBar.isVisible = false
-        progressBar.isIndeterminate = false
         progressBar.max = 100
 
         val releaseNotes: TextView = itemView.findViewById(R.id.releaseNotesTextView)
@@ -103,7 +101,7 @@ class AppInfoViewHolder(
                     }
 
                     progressBar.isVisible = true
-                    progressBar.progress = (100 * percentage).roundToInt()
+                    progressBar.progress = 100 * percentage.toFloat()
                 }
         }
     }
