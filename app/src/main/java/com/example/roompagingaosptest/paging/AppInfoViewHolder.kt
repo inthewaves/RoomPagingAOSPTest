@@ -18,15 +18,11 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.await
 import com.example.roompagingaosptest.MainActivityViewModel
 import com.example.roompagingaosptest.R
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.ProgressDatabase
-import com.example.roompagingaosptest.work.AppVersionUpdateJob
+import com.example.roompagingaosptest.work.AppVersionUpdateJobService
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -84,7 +80,6 @@ class AppInfoViewHolder(
         )
         releaseNotes.movementMethod = LinkMovementMethod.getInstance()
     }
-    private val workManager = WorkManager.getInstance(itemView.context)
     private val database = ProgressDatabase.getInstance(parent.context)
 
     private fun relaunchUpdateObserverJob(packageName: String) {
@@ -110,26 +105,7 @@ class AppInfoViewHolder(
     init {
         updateButton.setOnClickListener {
             appInfo?.let { appInfo ->
-                val tag = AppVersionUpdateJob.WORK_TAG
-                val workRequest = OneTimeWorkRequestBuilder<AppVersionUpdateJob>()
-                    .addTag(tag)
-                    .setInputData(AppVersionUpdateJob.Input(appInfo).inputData)
-                    .build()
-
-                workManager.enqueueUniqueWork(
-                    AppVersionUpdateJob.createName(appInfo),
-                    ExistingWorkPolicy.APPEND_OR_REPLACE,
-                    workRequest
-                )
-
-
-                lifecycleScope.launch {
-                    val list = workManager
-                        .getWorkInfosForUniqueWork(AppVersionUpdateJob.createName(appInfo))
-                        .await()
-                    Log.d(TAG, "All work for this package $appInfo: $list")
-                }
-
+                AppVersionUpdateJobService.enqueueJob(it.context, appInfo.packageName)
                 relaunchUpdateObserverJob(appInfo.packageName)
             }
         }
@@ -138,11 +114,13 @@ class AppInfoViewHolder(
             val deleteAppInfoActor = actor<AppInfo>(capacity = Channel.CONFLATED) {
                 for (appInfo in channel) {
                     viewModel.deleteAppInfo(appInfo.packageName)
-                    workManager.cancelUniqueWork(AppVersionUpdateJob.createName(appInfo))
                 }
             }
-            deleteButton.setOnClickListener {
-                appInfo?.let { deleteAppInfoActor.offer(it) }
+            deleteButton.setOnClickListener { button ->
+                appInfo?.let {
+                    deleteAppInfoActor.offer(it)
+                    AppVersionUpdateJobService.cancelJob(button.context, it.packageName)
+                }
             }
         }
     }

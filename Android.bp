@@ -23,7 +23,6 @@ android_app {
         "custom-androidx.room_room-ktx",
         "androidx.paging_paging-runtime",
         "androidx.recyclerview_recyclerview",
-        "custom-work-runtime-ktx",
 
         "androidx.navigation_navigation-fragment-ktx",
         "androidx.navigation_navigation-ui-ktx",

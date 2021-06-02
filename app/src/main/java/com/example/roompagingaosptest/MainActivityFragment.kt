@@ -6,17 +6,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.roompagingaosptest.paging.AppInfoAdapter
-import com.example.roompagingaosptest.work.PackageInsertJob
-import com.example.roompagingaosptest.work.PackageInsertJobInputData
+import com.example.roompagingaosptest.work.PackageInsertJobService
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -53,18 +51,13 @@ class MainActivityFragment : Fragment() {
         val newVersion = view.findViewById<TextView>(R.id.version_text)
 
         val addButton = view.findViewById<Button>(R.id.addButton)
-        addButton.setOnClickListener {
-            val input = PackageInsertJobInputData.create(
-                newPackage.text.toString(),
-                newVersion.text.toString().toIntOrNull()
-            )
-            val request = OneTimeWorkRequestBuilder<PackageInsertJob>()
-                .setInputData(input.data)
-                .addTag(PackageInsertJob.createTag(input))
-                .build()
-
-            WorkManager.getInstance(it.context)
-                .enqueue(request)
+        addButton.setOnClickListener { button ->
+            val version = newVersion.text.toString().toIntOrNull()
+            if (version == null) {
+                Toast.makeText(button.context, "Invalid version", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            PackageInsertJobService.enqueueJob(button.context, newPackage.text.toString(), version)
         }
     }
 }
