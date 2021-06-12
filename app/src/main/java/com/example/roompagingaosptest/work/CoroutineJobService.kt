@@ -92,6 +92,6 @@ abstract class CoroutineJobService : JobService() {
     @CallSuper
     override fun onDestroy() {
         super.onDestroy()
-        coroutineScope.cancel("onStopJob called")
+        coroutineScope.cancel("onDestroy called")
     }
 }
