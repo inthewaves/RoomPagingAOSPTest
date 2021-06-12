@@ -5,6 +5,7 @@ import android.app.job.JobParameters
 import android.app.job.JobScheduler
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.PersistableBundle
 import android.util.Log
@@ -33,12 +34,42 @@ class AppVersionUpdateJobService : CoroutineJobService() {
                 deriveJobId(packageName),
                 ComponentName(context, AppVersionUpdateJobService::class.java)
             ).setExtras(Input(packageName).extras)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .build()
-            context.getSystemService(JobScheduler::class.java).schedule(jobInfo)
+            val jobScheduler = context.getSystemService(JobScheduler::class.java)
+            jobScheduler.schedule(jobInfo).also { result ->
+                if (result == JobScheduler.RESULT_FAILURE) {
+                    Log.d(TAG, "enqueueJob(): RESULT_FAILURE ($result) for $packageName")
+                } else {
+                    Log.d(TAG, "enqueueJob(): RESULT_SUCCESS ($result) for $packageName")
+                }
+
+                Log.d(TAG, "pending: ${jobScheduler.allPendingJobs}")
+            }
         }
         fun cancelJob(context: Context, packageName: String) {
             context.getSystemService(JobScheduler::class.java).cancel(deriveJobId(packageName))
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        Log.d(TAG, "onCreate()")
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        Log.d(TAG, "onUnbind(): $intent with ${intent?.extras}, key set ${intent?.extras?.keySet()}")
+        return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy()")
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        Log.d(TAG, "onLowMemory()")
     }
 
     override val dispatcher: CoroutineDispatcher
@@ -47,9 +78,13 @@ class AppVersionUpdateJobService : CoroutineJobService() {
     override suspend fun doWork(params: JobParameters) = coroutineScope {
         val packageManager = applicationContext.packageManager
         val packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+        val systemSharedLibs = packageManager.systemSharedLibraryNames
+        val sharedLibs = packageManager.getSharedLibraries(PackageManager.GET_META_DATA)
 
         withContext(Dispatchers.Main) {
-            Log.d("AppVersionUpdateJob", "packages: ${packages.toList().joinToString("\n")}")
+            Log.d("AppVersionUpdateJob", "PACKAGES: ${packages.joinToString("\n")}")
+            Log.d("AppVersionUpdateJob", "SYSTEMSHAREDLIBS: ${systemSharedLibs?.asList()?.joinToString("\n")}")
+            Log.d("AppVersionUpdateJob", "SHAREDLIBS: ${sharedLibs.joinToString("\n")}")
         }
 
         val graphene = packages.filter {
@@ -68,7 +103,12 @@ class AppVersionUpdateJobService : CoroutineJobService() {
         val appUpdateProgressDao = ProgressDatabase.getInstance(applicationContext)
             .appUpdateProgressDao()
         val input = Input(params.extras)
-        var percentage: Double = 0.0
+
+        withContext(Dispatchers.IO) {
+            Log.d(TAG, "Processing ${input.pkg}")
+        }
+
+        var percentage = 0.0
         // setProgress(Progress(0.0).progressData)
         appUpdateProgressDao.updateProgressForPackage(input.pkg, 0.0)
         repeat(10 * 33) {
@@ -101,7 +141,8 @@ class AppVersionUpdateJobService : CoroutineJobService() {
     }
 
     override fun onStopJobInner(params: JobParameters): Boolean {
-        return false
+        Log.d(TAG, "onStopJobInner, params: $params, id: ${params.jobId}")
+        return true
     }
 
     class Input constructor(val extras: PersistableBundle) {

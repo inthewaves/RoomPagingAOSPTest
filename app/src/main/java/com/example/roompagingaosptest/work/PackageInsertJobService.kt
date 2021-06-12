@@ -21,6 +21,7 @@ import com.example.roompagingaosptest.db.TestDatabase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -34,7 +35,7 @@ class PackageInsertJobService : CoroutineJobService() {
 
         fun enqueueJob(context: Context, packageName: String, version: Int) {
             val jobInfo = JobInfo.Builder(
-                JOB_ID,
+                JOB_ID /* use a single jobId to enforce serial execution */,
                 ComponentName(context, PackageInsertJobService::class.java)
             ).build()
 
@@ -46,6 +47,21 @@ class PackageInsertJobService : CoroutineJobService() {
 
             context.getSystemService(JobScheduler::class.java).enqueue(jobInfo, jobWorkItem)
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        Log.d(TAG, "onCreate()")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy(), from location")
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        Log.d(TAG, "onUnbind(): $intent with ${intent?.extras}, key set ${intent?.extras?.keySet()}")
+        return super.onUnbind(intent)
     }
 
     private suspend fun createSessionAndReturnId(packageInstaller: PackageInstaller, parentSession: Boolean): Int {
@@ -71,9 +87,13 @@ class PackageInsertJobService : CoroutineJobService() {
             ensureActive()
             val pkg = workItem.intent.getStringExtra(EXTRA_PACKAGE_NAME)!!
             val newVersion = workItem.intent.getIntExtra(EXTRA_VERSION, -1)
+            Log.d(TAG, "doWork(): processing $pkg, newVersion: $newVersion")
             if (newVersion < 0) {
                 return@forEachWork
             }
+
+            Log.d(TAG, "delaying for 3 seconds")
+            delay(3000L)
 
             val appInfo = AppInfo(pkg, newVersion, System.currentTimeMillis() / 1000)
 
@@ -168,6 +188,10 @@ class PackageInsertJobService : CoroutineJobService() {
                         val action = "com.example.hi"
                         val intentFilter = IntentFilter(action)
                         applicationContext.registerReceiver(broadcastReceiver, intentFilter)
+                        cont.invokeOnCancellation {
+                            Log.d(TAG, "invokeOnCancellation(): unregistering receiver")
+                            application.unregisterReceiver(broadcastReceiver)
+                        }
 
                         Log.d(TAG, "before: calling UID: ${Binder.getCallingUid()}")
                         var success = false
@@ -176,8 +200,8 @@ class PackageInsertJobService : CoroutineJobService() {
                                 PendingIntent.getBroadcast(
                                     applicationContext,
                                     applicationContext.packageName.hashCode(),
-                                    Intent(action),
-                                    PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_UPDATE_CURRENT
+                                    Intent(action).setPackage(applicationContext.packageName),
+                                    PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
                                 ).intentSender
                             )
                             success = true
@@ -187,7 +211,6 @@ class PackageInsertJobService : CoroutineJobService() {
                                 packageInstaller.abandonSession(parentSessionId)
                             }
                         }
-                        cont.invokeOnCancellation { application.unregisterReceiver(broadcastReceiver) }
                     }
                     try {
                         packageInstaller.abandonSession(parentSessionId)
@@ -201,6 +224,7 @@ class PackageInsertJobService : CoroutineJobService() {
     }
 
     override fun onStopJobInner(params: JobParameters): Boolean {
-        return false
+        Log.d(TAG, "onStopJobInner, params: $params, id: ${params.jobId}")
+        return true
     }
 }
