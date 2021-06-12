@@ -22,7 +22,9 @@ abstract class CoroutineJobService : JobService() {
      * If an exception is thrown, [JobParameters.completeWork] is not called. This is to prevent
      * cancellations from losing incomplete work.
      */
-    protected inline fun JobParameters.forEachWork(workHandler: (JobWorkItem) -> Unit) {
+    protected suspend inline fun JobParameters.forEachWork(
+        crossinline workHandler: suspend (JobWorkItem) -> Unit
+    ) {
         var work: JobWorkItem? = dequeueWork()
         while (work != null) {
             workHandler(work)
