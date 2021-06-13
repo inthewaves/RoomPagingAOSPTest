@@ -83,7 +83,7 @@ class AppVersionUpdateJobService : ChainingJobService() {
         val systemSharedLibs = packageManager.systemSharedLibraryNames
         val sharedLibs = packageManager.getSharedLibraries(PackageManager.GET_META_DATA)
 
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.IO) {
             Log.d("AppVersionUpdateJob", "PACKAGES: ${packages.joinToString("\n")}")
             Log.d("AppVersionUpdateJob", "SYSTEMSHAREDLIBS: ${systemSharedLibs?.asList()?.joinToString("\n")}")
             Log.d("AppVersionUpdateJob", "SHAREDLIBS: ${sharedLibs.joinToString("\n")}")
@@ -93,7 +93,7 @@ class AppVersionUpdateJobService : ChainingJobService() {
             it.packageName.contains("graphene") ||
                     it.packageName.contains("example")
         }
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.IO) {
             val apkDirs = graphene.map { it.sourceDir }
             Log.d("AppVersionUpdateJob", "graphene: $graphene\n " +
                     "apk dirs: $apkDirs")
