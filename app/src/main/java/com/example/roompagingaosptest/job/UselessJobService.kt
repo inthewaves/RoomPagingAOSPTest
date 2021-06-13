@@ -1,6 +1,5 @@
 package com.example.roompagingaosptest.job
 
-import android.app.job.JobInfo
 import android.app.job.JobParameters
 import android.util.Log
 import com.example.roompagingaosptest.job.jobchain.ChainingJobService
@@ -12,11 +11,7 @@ class UselessJobService : ChainingJobService() {
     override suspend fun runJob(params: JobParameters): JobResult {
         Log.d("UselessJobService", "doing nothing for 1 second")
         delay(1000L)
-        return JobResult.Success()
-    }
-
-    override fun createNextJobInfo(params: JobParameters, result: JobResult.Success): JobInfo? {
-        return null
+        return JobResult.Success(null)
     }
 
     override val dispatcher: CoroutineDispatcher

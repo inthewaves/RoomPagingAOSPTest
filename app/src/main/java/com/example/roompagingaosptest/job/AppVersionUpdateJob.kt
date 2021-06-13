@@ -139,16 +139,13 @@ class AppVersionUpdateJobService : ChainingJobService() {
 
         appUpdateProgressDao.deletePackage(input.pkg)
 
-        return@coroutineScope JobResult.Success()
+        return@coroutineScope JobResult.Success {
+            JobInfo.Builder(
+                params.jobId + 1,
+                ComponentName(this@AppVersionUpdateJobService, UselessJobService::class.java)
+            ).build()
+        }
     }
-
-    override fun createNextJobInfo(params: JobParameters, result: JobResult.Success): JobInfo? {
-        return JobInfo.Builder(
-            params.jobId + 1,
-            ComponentName(this, UselessJobService::class.java)
-        ).build()
-    }
-
     override fun onStopJobInner(params: JobParameters): Boolean {
         Log.d(TAG, "onStopJobInner, params: $params, id: ${params.jobId}")
         return true

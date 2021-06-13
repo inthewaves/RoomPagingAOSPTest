@@ -5,7 +5,6 @@ import android.app.job.JobParameters
 import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.app.job.JobWorkItem
-import android.os.Bundle
 import android.util.Log
 import com.example.roompagingaosptest.job.CoroutineJobService
 import kotlinx.coroutines.coroutineScope
@@ -27,13 +26,12 @@ abstract class ChainingJobService : CoroutineJobService() {
 
     protected sealed class JobResult {
         /**
-         * A [JobResult] indicating a successful job. The [data] can be used to inform the creation
-         * of the next [JobInfo] in the [createNextJobInfo] function, which will then launch
-         * the next job in the chain if [createNextJobInfo] returns a non-null value.
+         * A [JobResult] indicating a successful job. The [nextJobCreator] is optional, and it is
+         * used to create the next job in the chain using the supplied [JobParameters]. If the
+         * [nextJobCreator] is null pr [nextJobCreator] returns null, no further jobs will be
+         * scheduled.
          */
-        class Success(val data: Bundle?) : JobResult() {
-            constructor() : this(null)
-        }
+        class Success(val nextJobCreator: (() -> JobInfo?)?) : JobResult()
         /**
          * A [JobResult] indicating a failed job. Next jobs in the chain will not be run, and the
          * failed job will not be rescheduled.
@@ -62,31 +60,14 @@ abstract class ChainingJobService : CoroutineJobService() {
      *
      * @return The [JobResult]: [JobResult.Success], [JobResult.Retry], or [JobResult.Failure].
      * - The next job in the chain will be scheduled if and only if [JobResult.Success] is returned.
-     *   A [Bundle] can be placed in the [JobResult.Success] instance to inform your implementation
-     *   of [createNextJobInfo] about what the specifics of what the next job should be.
+     *   A lambda that creates the next job ([JobResult.Success.nextJobCreator]) will be used to
+     *   create the next job instance. If the nextJobCreator is null or nextJobCreator returns null,
+     *   no further jobs will be scheduled.
      * - Returning [JobResult.Retry] gives the job another chance to reschedule and complete the job
      *   successfully to advance the job chain.
      * - Returning [JobResult.Failure] fails the job and doesn't run any of the dependents.
      */
     protected abstract suspend fun runJob(params: JobParameters): JobResult
-
-    /**
-     * Creates a [JobInfo] instance for the next job that should be run. Returning null means the
-     * chain will end here and no other jobs will be scheduled.
-     *
-     * This function takes in the [params] that are for the successful job. Also, the given [result]
-     * contains an optional [Bundle] returned as part of your [runJob] implementation. These two
-     * items together can be used to determine what [android.app.job.JobService] class to use, what
-     * constraints to use, etc.
-     *
-     * As the job chain is not created declaratively, it's the caller's responsibility to make sure
-     * that there are no cycles in the job chain, although the chain length is limited by
-     * [MAX_JOB_CHAIN_LENGTH]
-     */
-    protected abstract fun createNextJobInfo(
-        params: JobParameters,
-        result: JobResult.Success
-    ): JobInfo?
 
     final override suspend fun doWork(params: JobParameters) {
         val chainLength = params.extras.getInt(EXTRA_CHAIN_LENGTH, 1)
@@ -110,7 +91,7 @@ abstract class ChainingJobService : CoroutineJobService() {
         Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): result: $result")
 
         if (result is JobResult.Success) {
-            val nextJob: JobInfo? = createNextJobInfo(params, result)
+            val nextJob: JobInfo? = result.nextJobCreator?.invoke()
             if (nextJob != null) {
                 if (chainLength <= MAX_JOB_CHAIN_LENGTH) {
                     nextJob.extras.putInt(EXTRA_CHAIN_LENGTH, chainLength + 1)
