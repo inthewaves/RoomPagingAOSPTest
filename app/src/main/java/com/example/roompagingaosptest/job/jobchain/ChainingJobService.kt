@@ -19,6 +19,10 @@ import kotlinx.coroutines.coroutineScope
 abstract class ChainingJobService : CoroutineJobService() {
     companion object {
         private const val TAG = "ChainingJobService"
+        /** The length of the job chain */
+        private const val EXTRA_CHAIN_LENGTH = "chain_length"
+        /** The max length of a job chain, for safety reasons */
+        private const val MAX_JOB_CHAIN_LENGTH = 25
     }
 
     protected sealed class JobResult {
@@ -76,7 +80,8 @@ abstract class ChainingJobService : CoroutineJobService() {
      * constraints to use, etc.
      *
      * As the job chain is not created declaratively, it's the caller's responsibility to make sure
-     * that there are no cycles in the job chain.
+     * that there are no cycles in the job chain, although the chain length is limited by
+     * [MAX_JOB_CHAIN_LENGTH]
      */
     protected abstract fun createNextJobInfo(
         params: JobParameters,
@@ -84,6 +89,8 @@ abstract class ChainingJobService : CoroutineJobService() {
     ): JobInfo?
 
     final override suspend fun doWork(params: JobParameters) {
+        val chainLength = params.extras.getInt(EXTRA_CHAIN_LENGTH, 1)
+        Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): starting with chainLength $chainLength")
         val result: JobResult = try {
             // Wrap in a coroutineScope to ensure we catch exceptions thrown.
             coroutineScope {
@@ -100,20 +107,26 @@ abstract class ChainingJobService : CoroutineJobService() {
             Log.w(TAG, "doWork (subclass ${this::class.java.simpleName}): exception", e)
             JobResult.Failure
         }
-
         Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): result: $result")
 
         if (result is JobResult.Success) {
             val nextJob: JobInfo? = createNextJobInfo(params, result)
             if (nextJob != null) {
-                val jobSchedulerResult = applicationContext
-                    .getSystemService(JobScheduler::class.java)
-                    .schedule(nextJob)
-                if (jobSchedulerResult == JobScheduler.RESULT_SUCCESS) {
-                    Log.d(TAG, "(${this::class.java.simpleName}) scheduled next job in chain")
+                if (chainLength <= MAX_JOB_CHAIN_LENGTH) {
+                    nextJob.extras.putInt(EXTRA_CHAIN_LENGTH, chainLength + 1)
+                    val jobSchedulerResult = applicationContext
+                        .getSystemService(JobScheduler::class.java)
+                        .schedule(nextJob)
+                    if (jobSchedulerResult == JobScheduler.RESULT_SUCCESS) {
+                        Log.d(TAG, "(${this::class.java.simpleName}) scheduled next job in chain")
+                    } else {
+                        Log.w(TAG, "(${this::class.java.simpleName}) failed to schedule next " +
+                                "job in chain (result: $jobSchedulerResult)")
+                    }
                 } else {
                     Log.w(TAG, "(${this::class.java.simpleName}) failed to schedule next " +
-                            "job in chain (result: $jobSchedulerResult)")
+                            "job in chain " +
+                            "(chain length of $chainLength too long: max is $MAX_JOB_CHAIN_LENGTH)")
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.example.roompagingaosptest.job
 
+import android.app.job.JobInfo
 import android.app.job.JobParameters
 import android.util.Log
 import com.example.roompagingaosptest.job.jobchain.ChainingJobService
@@ -9,9 +10,13 @@ import kotlinx.coroutines.delay
 
 class UselessJobService : ChainingJobService() {
     override suspend fun runJob(params: JobParameters): JobResult {
-        Log.d("UselessJobService", "doing nothing for 3 seconds")
-        delay(3000L)
-        return JobResult.SUCCESS
+        Log.d("UselessJobService", "doing nothing for 1 second")
+        delay(1000L)
+        return JobResult.Success()
+    }
+
+    override fun createNextJobInfo(params: JobParameters, result: JobResult.Success): JobInfo? {
+        return null
     }
 
     override val dispatcher: CoroutineDispatcher
