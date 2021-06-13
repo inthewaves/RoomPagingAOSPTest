@@ -13,8 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.roompagingaosptest.job.PackageInsertJobService
 import com.example.roompagingaosptest.paging.AppInfoAdapter
-import com.example.roompagingaosptest.work.PackageInsertJobService
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 

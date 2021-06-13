@@ -1,4 +1,4 @@
-package com.example.roompagingaosptest.work
+package com.example.roompagingaosptest.job
 
 import android.app.job.JobParameters
 import android.app.job.JobService
@@ -34,7 +34,9 @@ abstract class CoroutineJobService : JobService() {
     }
 
     /**
-     * The [CoroutineDispatcher] to use for running the job.
+     * The [CoroutineDispatcher] to use for running the jobs for this [CoroutineJobService]. There
+     * may be multiple coroutines running on this service if multiple jobs were enqueued for
+     * this particular service.
      */
     abstract val dispatcher: CoroutineDispatcher
 

@@ -22,7 +22,7 @@ import com.example.roompagingaosptest.MainActivityViewModel
 import com.example.roompagingaosptest.R
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.ProgressDatabase
-import com.example.roompagingaosptest.work.AppVersionUpdateJobService
+import com.example.roompagingaosptest.job.AppVersionUpdateJobService
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
