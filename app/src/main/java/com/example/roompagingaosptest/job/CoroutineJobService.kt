@@ -50,6 +50,11 @@ abstract class CoroutineJobService : JobService() {
      * Does the work for the job in a coroutine. You should use [jobFinished] when finished if
      * applicable, otherwise use [JobParameters.forEachWork] to deal with [JobWorkItem]s.
      *
+     * This suspend function should be cancellable, as the [CoroutineJobService] may need to cancel
+     * coroutines when constraints fail to be met. Use cancellable functions such as
+     * [kotlinx.coroutines.ensureActive] and [kotlinx.coroutines.yield] or read the
+     * [kotlinx.coroutines.isActive] Boolean property in long-running computational loops.
+     *
      * @see onStartJob
      */
     abstract suspend fun doWork(params: JobParameters)

@@ -3,17 +3,18 @@ package com.example.roompagingaosptest.job
 import android.app.job.JobInfo
 import android.app.job.JobParameters
 import android.app.job.JobScheduler
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.PersistableBundle
 import android.util.Log
+import androidx.core.os.persistableBundleOf
 import androidx.room.withTransaction
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.ProgressDatabase
 import com.example.roompagingaosptest.db.TestDatabase
 import com.example.roompagingaosptest.job.jobchain.ChainingJobService
-import com.example.roompagingaosptest.job.jobchain.buildJobChain
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -31,31 +32,6 @@ class AppVersionUpdateJobService : ChainingJobService() {
         fun createName(appInfo: AppInfo) = "AppVersionUpdateJob-${appInfo.packageName}"
 
         fun enqueueJob(context: Context, packageName: String) {
-
-            val chain = buildJobChain(context) {
-                addJob(deriveJobId(packageName), AppVersionUpdateJobService::class.java) {
-                    setExtras(Input(packageName).extras)
-                    setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                }
-                addJob(deriveJobId(packageName) + 1, UselessJobService::class.java)
-            }
-
-            chain.jobs.forEach {
-                Log.d(TAG, "jobs ")
-            }
-
-            val jobScheduler = context.getSystemService(JobScheduler::class.java)
-            chain.enqueue(jobScheduler).also { result ->
-                if (result == JobScheduler.RESULT_FAILURE) {
-                    Log.d(TAG, "enqueueJob(): RESULT_FAILURE ($result) for $packageName")
-                } else {
-                    Log.d(TAG, "enqueueJob(): RESULT_SUCCESS ($result) for $packageName")
-                }
-
-                Log.d(TAG, "pending: ${jobScheduler.allPendingJobs}")
-            }
-
-            /*
             val jobInfo = JobInfo.Builder(
                 deriveJobId(packageName),
                 ComponentName(context, AppVersionUpdateJobService::class.java)
@@ -72,7 +48,6 @@ class AppVersionUpdateJobService : ChainingJobService() {
 
                 Log.d(TAG, "pending: ${jobScheduler.allPendingJobs}")
             }
-             */
         }
         fun cancelJob(context: Context, packageName: String) {
             context.getSystemService(JobScheduler::class.java).cancel(deriveJobId(packageName))
@@ -139,7 +114,7 @@ class AppVersionUpdateJobService : ChainingJobService() {
         // setProgress(Progress(0.0).progressData)
         appUpdateProgressDao.updateProgressForPackage(input.pkg, 0.0)
         repeat(10 * 33) {
-            delay(50L)
+            delay(12L)
             percentage += 0.002
             appUpdateProgressDao.updateProgressForPackage(input.pkg, percentage)
         }
@@ -164,7 +139,14 @@ class AppVersionUpdateJobService : ChainingJobService() {
 
         appUpdateProgressDao.deletePackage(input.pkg)
 
-        return@coroutineScope JobResult.SUCCESS
+        return@coroutineScope JobResult.Success()
+    }
+
+    override fun createNextJobInfo(params: JobParameters, result: JobResult.Success): JobInfo? {
+        return JobInfo.Builder(
+            params.jobId + 1,
+            ComponentName(this, UselessJobService::class.java)
+        ).build()
     }
 
     override fun onStopJobInner(params: JobParameters): Boolean {
@@ -174,9 +156,9 @@ class AppVersionUpdateJobService : ChainingJobService() {
 
     class Input constructor(val extras: PersistableBundle) {
         val pkg: String get() = extras.getString(PACKAGE_KEY)!!
-        constructor(packageName: String): this(
-            PersistableBundle(1).apply { putString(PACKAGE_KEY, packageName) }
-        )
+        constructor(
+            packageName: String
+        ): this(persistableBundleOf(PACKAGE_KEY to packageName))
 
         companion object {
             private const val PACKAGE_KEY = "package"
