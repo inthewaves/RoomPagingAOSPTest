@@ -5,14 +5,10 @@ import android.app.job.JobParameters
 import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.app.job.JobWorkItem
-import android.content.ComponentName
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import com.example.roompagingaosptest.job.CoroutineJobService
 import kotlinx.coroutines.coroutineScope
-
-private const val EXTRA_NEXT_JOB_INFO = "next_job_info"
 
 /**
  * A [JobService] that has the ability to schedule other [JobService]s after successful completion.
@@ -82,26 +78,10 @@ abstract class ChainingJobService : CoroutineJobService() {
      * As the job chain is not created declaratively, it's the caller's responsibility to make sure
      * that there are no cycles in the job chain.
      */
-    protected fun createNextJobInfo(
+    protected abstract fun createNextJobInfo(
         params: JobParameters,
         result: JobResult.Success
-    ): JobInfo? {
-        val nextJobs = params.transientExtras.getParcelableArrayList<JobInfo>(EXTRA_NEXT_JOB_INFO)
-        if (nextJobs.isNullOrEmpty()) {
-            return null
-        }
-
-        val firstJob = nextJobs.removeAt(0).apply {
-            editNextJobInfo()
-        }
-        if (nextJobs.isNotEmpty()) {
-            firstJob.transientExtras.putParcelableArrayList(EXTRA_NEXT_JOB_INFO, nextJobs)
-        }
-
-        return firstJob
-    }
-
-    protected abstract fun JobInfo.editNextJobInfo()
+    ): JobInfo?
 
     final override suspend fun doWork(params: JobParameters) {
         val result: JobResult = try {
@@ -140,78 +120,4 @@ abstract class ChainingJobService : CoroutineJobService() {
 
         jobFinished(params, /*wantsReschedule=*/result is JobResult.Retry)
     }
-}
-
-class JobChain private constructor(private val jobs: List<JobInfo>) {
-    init {
-        require(jobs.isNotEmpty()) { "jobs is empty" }
-    }
-
-    fun enqueue(jobScheduler: JobScheduler): Int {
-        return jobScheduler.schedule(jobs.first())
-    }
-
-    class Builder(ctx: Context) {
-        val context: Context = ctx.applicationContext
-
-        private val _jobs = mutableListOf<JobInfo>()
-        /** For inline function access */
-        val jobs: List<JobInfo> = _jobs
-
-        private var isDoneBuilding = false
-
-        fun build(): JobChain {
-            check(!isDoneBuilding) { "can't build twice" }
-            check(_jobs.isNotEmpty()) { "missing jobs" }
-
-            // Run a check first so that any failures don't result in partially written results.
-            val distinctJobIds = hashSetOf<Int>()
-            _jobs.forEachIndexed { index, jobInfo ->
-                if (index != 0) {
-                    require(!jobInfo.isPeriodic) { "intermediate jobs can't be periodic" }
-                    require(!jobInfo.isPersisted) { "intermediate jobs can't be persisted" }
-                }
-                distinctJobIds.add(jobInfo.id)
-            }
-            check(distinctJobIds.size == _jobs.size) { "some job IDs are duplicated" }
-
-            val firstJob = _jobs.first()
-            val intermediateJobs = _jobs.asSequence()
-                .dropWhile { firstJob == it }
-                .toCollection(ArrayList(_jobs.size - 1))
-            check(intermediateJobs.size == _jobs.size - 1)
-
-            // By using transientExtras, we can't make job chains persisted onto disk using
-            // JobInfo.Builder.setPersisted.
-            if (intermediateJobs.isNotEmpty()) {
-                firstJob.transientExtras.putParcelableArrayList(
-                    EXTRA_NEXT_JOB_INFO,
-                    intermediateJobs
-                )
-            }
-            isDoneBuilding = true
-            return JobChain(_jobs)
-        }
-
-        inline fun <T : ChainingJobService> addJob(
-            jobId: Int,
-            clazz: Class<T>,
-            crossinline jobInfoAction: JobInfo.Builder.() -> Unit = {}
-        ) {
-            val jobInfo = JobInfo.Builder(jobId, ComponentName(context, clazz))
-                .apply(jobInfoAction)
-                .build()
-
-            (jobs as MutableList).add(jobInfo)
-        }
-    }
-}
-
-inline fun buildJobChain(
-    context: Context,
-    crossinline init: JobChain.Builder.() -> Unit
-): JobChain {
-    val builder = JobChain.Builder(context)
-    builder.init()
-    return builder.build()
 }
