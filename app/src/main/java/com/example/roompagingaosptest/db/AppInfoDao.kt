@@ -46,6 +46,9 @@ interface AppInfoDao {
     @Query("SELECT * FROM AppInfo WHERE packageName = :packageName")
     suspend fun getAppInfo(packageName: String): AppInfo?
 
+    @Query("SELECT COUNT(*) FROM AppInfo")
+    suspend fun countAppInfo(): Long
+
     @Query("SELECT * FROM AppInfo ORDER BY packageName")
     fun allAppInfo(): PagingSource<Int, AppInfo>
 

@@ -40,6 +40,9 @@ class AppInfoViewHolder(
 ) {
     companion object {
         private const val TAG = "AppInfoViewHolder"
+        /** Max progress update flow emissions to consume before using animations. */
+        private const val PROGRESS_BAR_ANIMATION_COUNT_MAX = 2
+
         private val expandInterpolator = FastOutSlowInInterpolator()
     }
 
@@ -64,8 +67,7 @@ class AppInfoViewHolder(
 
         val releaseNotes: TextView = itemView.findViewById(R.id.releaseNotesTextView)
         releaseNotes.text = Html.fromHtml(
-            """
-                <p>This is a paragraphed used to do my stuff.</p>
+            """<p>This is a paragraphed used to do my stuff.</p>
                 <ul>
                     <li>This is my thing.</li>
                     <li>This is my other thing.</li>
@@ -85,18 +87,28 @@ class AppInfoViewHolder(
     private fun relaunchUpdateObserverJob(packageName: String) {
         progressJob?.cancel()
         progressJob = lifecycleScope.launch {
-            database.appUpdateProgressDao().getProgressForPackage(packageName)
+            // This is to prevent the progress bar from visibly jumping to different progress when
+            // rebinding with another app of different progress.
+            var animateCounter = 1
+            database.appUpdateProgressDao().getProgressForPackageFlow(packageName)
                 .conflate()
                 .distinctUntilChanged()
                 .collect { percentage ->
-                    // Log.d(TAG, "${appInfo?.packageName} collected $percentage")
                     if (percentage == null) {
+                        Log.d(TAG, "${appInfo?.packageName} collected null percentage")
                         progressBar.isVisible = false
+                        progressBar.progress = 0
+                        animateCounter = 1
                         return@collect
                     }
 
-                    progressBar.isVisible = true
-                    progressBar.progress = (100 * percentage).toInt()
+                    val shouldAnimate = animateCounter > PROGRESS_BAR_ANIMATION_COUNT_MAX
+                    progressBar.setProgressCompat(
+                        (100 * percentage).toInt(),
+                        shouldAnimate
+                    )
+                    if (!shouldAnimate) animateCounter++
+                    if (!progressBar.isVisible) progressBar.isVisible = true
                 }
         }
     }

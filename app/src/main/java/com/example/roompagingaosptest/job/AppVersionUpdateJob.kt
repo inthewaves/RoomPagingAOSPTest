@@ -112,26 +112,26 @@ class AppVersionUpdateJobService : ChainingJobService() {
 
         var percentage = 0.0
         // setProgress(Progress(0.0).progressData)
-        appUpdateProgressDao.updateProgressForPackage(input.pkg, 0.0)
+        appUpdateProgressDao.upsertProgressForPackage(input.pkg, 0.0)
         repeat(10 * 33) {
             delay(12L)
             percentage += 0.002
-            appUpdateProgressDao.updateProgressForPackage(input.pkg, percentage)
+            appUpdateProgressDao.upsertProgressForPackage(input.pkg, percentage)
         }
-        appUpdateProgressDao.updateProgressForPackage(input.pkg, 2/3.0)
+        appUpdateProgressDao.upsertProgressForPackage(input.pkg, 2/3.0)
 
         val success = coroutineScope {
             val success = database.withTransaction {
                 val dao = database.appInfoDao()
                 val appInfo = dao.getAppInfo(input.pkg) ?: return@withTransaction false
                 dao.updateVersionCode(appInfo.packageName, appInfo.versionCode + 1L)
-                appUpdateProgressDao.updateProgressForPackage(input.pkg, 0.9)
+                appUpdateProgressDao.upsertProgressForPackage(input.pkg, 0.9)
                 true
             }
             success
         }
         delay(2500L)
-        appUpdateProgressDao.updateProgressForPackage(input.pkg, 1.0)
+        appUpdateProgressDao.upsertProgressForPackage(input.pkg, 1.0)
         withContext(Dispatchers.Main) {
             Log.d(TAG, "${input.pkg} has reached 100%")
         }

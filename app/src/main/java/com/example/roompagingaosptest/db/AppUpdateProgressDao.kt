@@ -9,14 +9,17 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 abstract class AppUpdateProgressDao {
     @Query("SELECT percentage FROM AppUpdateProgress WHERE packageName = :pkg")
-    abstract fun getProgressForPackage(pkg: String): Flow<Double?>
+    abstract fun getProgressForPackageFlow(pkg: String): Flow<Double?>
 
-    suspend fun updateProgressForPackage(pkg: String, percentage: Double) {
+    suspend fun upsertProgressForPackage(pkg: String, percentage: Double) {
         if (update(pkg, percentage) < 1) {
             insertProgressForPackage(AppUpdateProgress(pkg, percentage))
         }
     }
 
+    /**
+     * @return The number of rows affected
+     */
     @Query("UPDATE AppUpdateProgress SET percentage = :percentage WHERE packageName = :pkg")
     protected abstract suspend fun update(pkg: String, percentage: Double): Int
 

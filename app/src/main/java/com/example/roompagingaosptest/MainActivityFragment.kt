@@ -52,7 +52,7 @@ class MainActivityFragment : Fragment() {
 
         val addButton = view.findViewById<Button>(R.id.addButton)
         addButton.setOnClickListener { button ->
-            val version = newVersion.text.toString().toIntOrNull()
+            val version = newVersion.text.toString().toLongOrNull()
             if (version == null) {
                 Toast.makeText(button.context, "Invalid version", Toast.LENGTH_LONG).show()
                 return@setOnClickListener

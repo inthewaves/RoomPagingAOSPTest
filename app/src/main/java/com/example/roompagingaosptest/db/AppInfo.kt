@@ -15,7 +15,7 @@ data class AppInfo(
     @ColumnInfo @PrimaryKey
     val packageName: String,
     @ColumnInfo
-    val versionCode: Int,
+    val versionCode: Long,
     @ColumnInfo
     val lastUpdated: Long,
     @ColumnInfo

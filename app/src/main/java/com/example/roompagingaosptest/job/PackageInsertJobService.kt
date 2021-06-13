@@ -33,7 +33,7 @@ class PackageInsertJobService : CoroutineJobService() {
         private const val EXTRA_PACKAGE_NAME = "package"
         private const val EXTRA_VERSION = "version"
 
-        fun enqueueJob(context: Context, packageName: String, version: Int) {
+        fun enqueueJob(context: Context, packageName: String, version: Long) {
             val jobInfo = JobInfo.Builder(
                 JOB_ID /* use a single jobId to enforce serial execution */,
                 ComponentName(context, PackageInsertJobService::class.java)
@@ -86,7 +86,7 @@ class PackageInsertJobService : CoroutineJobService() {
         params.forEachWork { workItem ->
             ensureActive()
             val pkg = workItem.intent.getStringExtra(EXTRA_PACKAGE_NAME)!!
-            val newVersion = workItem.intent.getIntExtra(EXTRA_VERSION, -1)
+            val newVersion = workItem.intent.getLongExtra(EXTRA_VERSION, -1)
             Log.d(TAG, "doWork(): processing $pkg, newVersion: $newVersion")
             if (newVersion < 0) {
                 return@forEachWork

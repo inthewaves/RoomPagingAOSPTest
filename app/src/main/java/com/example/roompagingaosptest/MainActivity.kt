@@ -5,6 +5,11 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.room.withTransaction
+import com.example.roompagingaosptest.db.AppInfo
+import com.example.roompagingaosptest.db.TestDatabase
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -27,5 +32,26 @@ class MainActivity : AppCompatActivity() {
         }
         activity = this
         setContentView(R.layout.activity_main)
+
+        lifecycleScope.launch {
+            val testDb = TestDatabase.getInstance(this@MainActivity)
+            val appInfoDao = testDb.appInfoDao()
+
+            if (appInfoDao.countAppInfo() <= 0) {
+                Log.d("MainActivity", "inserting all apps")
+                testDb.withTransaction {
+                    packageManager.getInstalledPackages(PackageManager.GET_META_DATA)
+                        .forEach { packageInfo ->
+                            appInfoDao.insert(
+                                AppInfo(
+                                    packageInfo.packageName,
+                                    packageInfo.longVersionCode,
+                                    packageInfo.lastUpdateTime
+                                )
+                            )
+                        }
+                }
+            }
+        }
     }
 }
