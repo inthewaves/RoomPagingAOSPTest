@@ -126,7 +126,7 @@ abstract class ChainingJobService : CoroutineJobService() {
                 } else {
                     Log.w(TAG, "(${this::class.java.simpleName}) failed to schedule next " +
                             "job in chain " +
-                            "(chain length of $chainLength too long: max is $MAX_JOB_CHAIN_LENGTH)")
+                            "(chain length of $chainLength exceeds max of $MAX_JOB_CHAIN_LENGTH)")
                 }
             }
         }

@@ -43,6 +43,8 @@ class AppInfoViewHolder(
         /** Max progress update flow emissions to consume before using animations. */
         private const val PROGRESS_BAR_ANIMATION_COUNT_MAX = 2
 
+        private const val EXPAND_DURATION_MILLIS = 250L
+
         private val expandInterpolator = FastOutSlowInInterpolator()
     }
 
@@ -209,8 +211,9 @@ class AppInfoViewHolder(
                         }
                     }
                 }
-            }.apply {
-                duration = 250L
+            }
+            animation.apply {
+                duration = EXPAND_DURATION_MILLIS
                 interpolator = expandInterpolator
             }
             startAnimation(animation)
