@@ -3,7 +3,6 @@ package com.example.roompagingaosptest.job
 import android.app.job.JobInfo
 import android.app.job.JobParameters
 import android.app.job.JobScheduler
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,6 +12,8 @@ import androidx.room.withTransaction
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.ProgressDatabase
 import com.example.roompagingaosptest.db.TestDatabase
+import com.example.roompagingaosptest.job.jobchain.ChainingJobService
+import com.example.roompagingaosptest.job.jobchain.buildJobChain
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -20,7 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class AppVersionUpdateJobService : CoroutineJobService() {
+class AppVersionUpdateJobService : ChainingJobService() {
     companion object {
         private const val TAG = "AppVersionUpdateJobService"
         const val JOB_ID = 20000000
@@ -30,6 +31,31 @@ class AppVersionUpdateJobService : CoroutineJobService() {
         fun createName(appInfo: AppInfo) = "AppVersionUpdateJob-${appInfo.packageName}"
 
         fun enqueueJob(context: Context, packageName: String) {
+
+            val chain = buildJobChain(context) {
+                addJob(deriveJobId(packageName), AppVersionUpdateJobService::class.java) {
+                    setExtras(Input(packageName).extras)
+                    setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                }
+                addJob(deriveJobId(packageName) + 1, UselessJobService::class.java)
+            }
+
+            chain.jobs.forEach {
+                Log.d(TAG, "jobs ")
+            }
+
+            val jobScheduler = context.getSystemService(JobScheduler::class.java)
+            chain.enqueue(jobScheduler).also { result ->
+                if (result == JobScheduler.RESULT_FAILURE) {
+                    Log.d(TAG, "enqueueJob(): RESULT_FAILURE ($result) for $packageName")
+                } else {
+                    Log.d(TAG, "enqueueJob(): RESULT_SUCCESS ($result) for $packageName")
+                }
+
+                Log.d(TAG, "pending: ${jobScheduler.allPendingJobs}")
+            }
+
+            /*
             val jobInfo = JobInfo.Builder(
                 deriveJobId(packageName),
                 ComponentName(context, AppVersionUpdateJobService::class.java)
@@ -46,6 +72,7 @@ class AppVersionUpdateJobService : CoroutineJobService() {
 
                 Log.d(TAG, "pending: ${jobScheduler.allPendingJobs}")
             }
+             */
         }
         fun cancelJob(context: Context, packageName: String) {
             context.getSystemService(JobScheduler::class.java).cancel(deriveJobId(packageName))
@@ -75,7 +102,7 @@ class AppVersionUpdateJobService : CoroutineJobService() {
     override val dispatcher: CoroutineDispatcher
         get() = Dispatchers.Default
 
-    override suspend fun doWork(params: JobParameters) = coroutineScope {
+    override suspend fun runJob(params: JobParameters): JobResult = coroutineScope {
         val packageManager = applicationContext.packageManager
         val packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
         val systemSharedLibs = packageManager.systemSharedLibraryNames
@@ -137,7 +164,7 @@ class AppVersionUpdateJobService : CoroutineJobService() {
 
         appUpdateProgressDao.deletePackage(input.pkg)
 
-        jobFinished(params, false)
+        return@coroutineScope JobResult.SUCCESS
     }
 
     override fun onStopJobInner(params: JobParameters): Boolean {

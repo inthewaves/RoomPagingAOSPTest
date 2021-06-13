@@ -89,7 +89,7 @@ class AppInfoViewHolder(
                 .conflate()
                 .distinctUntilChanged()
                 .collect { percentage ->
-                    Log.d(TAG, "${appInfo?.packageName} collected $percentage")
+                    // Log.d(TAG, "${appInfo?.packageName} collected $percentage")
                     if (percentage == null) {
                         progressBar.isVisible = false
                         return@collect

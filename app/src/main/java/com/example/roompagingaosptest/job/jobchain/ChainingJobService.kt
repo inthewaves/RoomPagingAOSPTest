@@ -1,11 +1,17 @@
 package com.example.roompagingaosptest.job.jobchain
 
 import android.app.job.JobParameters
+import android.app.job.JobScheduler
 import android.app.job.JobWorkItem
+import android.util.Log
 import com.example.roompagingaosptest.job.CoroutineJobService
 import kotlinx.coroutines.coroutineScope
 
 abstract class ChainingJobService : CoroutineJobService() {
+    companion object {
+        private const val TAG = "ChainingJobService"
+    }
+
     protected enum class JobResult { FAILURE, SUCCESS, RETRY }
 
     /**
@@ -28,11 +34,30 @@ abstract class ChainingJobService : CoroutineJobService() {
         val result: JobResult = try {
             coroutineScope {
                 runJob(params)
-            }
+            }.also { Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): success") }
+        } catch (e: JobServiceCoroutineCancellationException) {
+            // Don't bother calling jobFinished if the coroutine was cancelled.
+            // JobServiceCoroutineCancellationException is only used when the CoroutineJobService
+            // has onStopJob or onDestroy called. Whether to reschedule should be handled by
+            // onStopJobInner, so we just rethrow it.
+            Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): cancellation exception", e)
+            throw e
         } catch (e: Throwable) {
+            Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): exception means retry", e)
             JobResult.RETRY
         }
+
+        if (result == JobResult.SUCCESS) {
+            val jobChainInfo = JobChainInfo(params)
+            val nextJobInfo = jobChainInfo.nextJobInfo
+            Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): next job is $nextJobInfo")
+            if (nextJobInfo != null) {
+                applicationContext
+                    .getSystemService(JobScheduler::class.java)
+                    .schedule(nextJobInfo)
+            }
+        }
+
         jobFinished(params, /*wantsReschedule=*/result == JobResult.RETRY)
     }
-
 }

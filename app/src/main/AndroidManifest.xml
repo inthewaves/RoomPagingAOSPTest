@@ -27,6 +27,9 @@
         <service android:name=".job.PackageInsertJobService"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="false" />
+        <service android:name=".job.UselessJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
     </application>
 
 </manifest>

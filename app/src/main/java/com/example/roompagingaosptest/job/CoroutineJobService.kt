@@ -5,7 +5,9 @@ import android.app.job.JobService
 import android.app.job.JobWorkItem
 import android.util.Log
 import androidx.annotation.CallSuper
-import androidx.collection.arrayMapOf
+import androidx.collection.SimpleArrayMap
+import com.example.roompagingaosptest.util.set
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -42,7 +44,7 @@ abstract class CoroutineJobService : JobService() {
 
     private val coroutineScope by lazy { CoroutineScope(dispatcher + SupervisorJob()) }
 
-    private val activeJobs = arrayMapOf<JobParameters, Job>()
+    private val activeJobs = SimpleArrayMap<JobParameters, Job>()
 
     /**
      * Does the work for the job in a coroutine. You should use [jobFinished] when finished if
@@ -62,22 +64,32 @@ abstract class CoroutineJobService : JobService() {
     abstract fun onStopJobInner(params: JobParameters): Boolean
 
     final override fun onStartJob(params: JobParameters): Boolean {
-        Log.d("CoroutineJobService", "onStartJob(). params jobId=${params.jobId}, param hashcode: ${params.hashCode()}")
+        Log.d(
+            "CoroutineJobService",
+            "(subclass ${this::class.java.simpleName}): " +
+                    "onStartJob(), with " +
+                    "params jobId=${params.jobId}, " +
+                    "param hashcode: ${params.hashCode()}"
+        )
 
+        // Lazily start the job so that we have time to add it to the activeJobs map.
         val job = coroutineScope
             .launch(start = CoroutineStart.LAZY) { doWork(params) }
             .apply {
                 invokeOnCompletion {
                     synchronized(activeJobs) {
-                        Log.d("CoroutineJobService", "removing jobid ${params.jobId}")
+                        Log.d(
+                            "CoroutineJobService",
+                            "(subclass ${this@CoroutineJobService::class.java.simpleName}): removing job id ${params.jobId}"
+                        )
                         activeJobs.remove(params)
                     }
                 }
             }
         synchronized(activeJobs) {
             activeJobs[params] = job
-            job.start()
         }
+        job.start()
 
         return true
     }
@@ -85,7 +97,7 @@ abstract class CoroutineJobService : JobService() {
     final override fun onStopJob(params: JobParameters): Boolean {
         val shouldRetry = onStopJobInner(params)
         synchronized(activeJobs) {
-            activeJobs[params]?.cancel("onStopJob called")
+            activeJobs[params]?.cancel(JobServiceCoroutineCancellationException("onStopJob called"))
             activeJobs.remove(params)
         }
         return shouldRetry
@@ -94,6 +106,13 @@ abstract class CoroutineJobService : JobService() {
     @CallSuper
     override fun onDestroy() {
         super.onDestroy()
-        coroutineScope.cancel("onDestroy called")
+        coroutineScope.cancel(JobServiceCoroutineCancellationException("onDestroy called"))
+        synchronized(activeJobs) {
+            activeJobs.clear()
+        }
     }
+
+    protected class JobServiceCoroutineCancellationException(
+        override val message: String
+    ) : CancellationException()
 }
