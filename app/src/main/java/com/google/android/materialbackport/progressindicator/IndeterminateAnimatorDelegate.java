@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.material.progressindicator;
+package com.google.android.materialbackport.progressindicator;
 
 import android.animation.Animator;
 import android.graphics.drawable.Drawable;

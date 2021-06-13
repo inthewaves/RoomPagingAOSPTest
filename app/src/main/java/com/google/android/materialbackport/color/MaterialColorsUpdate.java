@@ -1,4 +1,4 @@
-package com.google.android.material.color;
+package com.google.android.materialbackport.color;
 
 import android.graphics.Color;
 

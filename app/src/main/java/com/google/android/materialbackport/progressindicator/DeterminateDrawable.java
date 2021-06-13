@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.material.progressindicator;
+package com.google.android.materialbackport.progressindicator;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -25,7 +25,7 @@ import androidx.dynamicanimation.animation.FloatPropertyCompat;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
 
-import com.google.android.material.color.MaterialColorsUpdate;
+import com.google.android.materialbackport.color.MaterialColorsUpdate;
 
 /** This class draws the graphics for determinate mode. */
 public final class DeterminateDrawable<S extends BaseProgressIndicatorSpec>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.material.progressindicator;
+package com.google.android.materialbackport.progressindicator;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -27,8 +27,8 @@ import androidx.annotation.StyleRes;
 
 import com.example.roompagingaosptest.R;
 import com.google.android.material.internal.ThemeEnforcement;
-import com.google.android.material.progressindicator.LinearProgressIndicator.IndeterminateAnimationType;
-import com.google.android.material.progressindicator.LinearProgressIndicator.IndicatorDirection;
+import com.google.android.materialbackport.progressindicator.LinearProgressIndicator.IndeterminateAnimationType;
+import com.google.android.materialbackport.progressindicator.LinearProgressIndicator.IndicatorDirection;
 
 /**
  * This class contains the parameters for drawing a linear type progress indicator. The parameters

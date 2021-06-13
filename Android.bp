@@ -6,8 +6,8 @@ android_app {
     ],
     resource_dirs: [
         "app/src/main/res",
-        "app/src/main/java/com/google/android/material/progressindicator/res",
-        "app/src/main/java/com/google/android/material/progressindicator/res-public"
+        "app/src/main/java/com/google/android/materialbackport/progressindicator/res",
+        "app/src/main/java/com/google/android/materialbackport/progressindicator/res-public"
     ],
     static_libs: [
         "kotlin-stdlib",

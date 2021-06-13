@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.android.material.progressindicator;
+package com.google.android.materialbackport.progressindicator;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -25,7 +25,7 @@ import androidx.annotation.ColorInt;
 import androidx.annotation.FloatRange;
 import androidx.annotation.NonNull;
 
-import com.google.android.material.color.MaterialColorsUpdate;
+import com.google.android.materialbackport.color.MaterialColorsUpdate;
 
 import static java.lang.Math.max;
 

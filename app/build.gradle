@@ -9,8 +9,8 @@ android {
         main {
             res.srcDirs = [
                 'src/main/res',
-                'src/main/java/com/google/android/material/progressindicator/res',
-                'src/main/java/com/google/android/material/progressindicator/res-public'
+                'src/main/java/com/google/android/materialbackport/progressindicator/res',
+                'src/main/java/com/google/android/materialbackport/progressindicator/res-public'
             ]
         }
     }

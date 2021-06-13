@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.material.progressindicator;
+package com.google.android.materialbackport.progressindicator;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -47,7 +47,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 
-import static com.google.android.material.theme.overlay.MaterialThemeOverlay.wrap;
+import static com.google.android.materialbackport.theme.overlay.MaterialThemeOverlay.wrap;
 import static java.lang.Math.min;
 
 /**

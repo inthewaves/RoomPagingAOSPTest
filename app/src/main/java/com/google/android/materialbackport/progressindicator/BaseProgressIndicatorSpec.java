@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.material.progressindicator;
+package com.google.android.materialbackport.progressindicator;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -30,13 +30,9 @@ import androidx.annotation.StyleRes;
 
 import com.example.roompagingaosptest.R;
 import com.google.android.material.color.MaterialColors;
-import com.google.android.material.color.MaterialColorsUpdate;
 import com.google.android.material.internal.ThemeEnforcement;
-import com.google.android.material.progressindicator.BaseProgressIndicator.HideAnimationBehavior;
-import com.google.android.material.progressindicator.BaseProgressIndicator.ShowAnimationBehavior;
-
-import static com.google.android.material.resources.MaterialResourcesUpdate.getDimensionPixelSize;
-import static java.lang.Math.min;
+import com.google.android.materialbackport.color.MaterialColorsUpdate;
+import com.google.android.materialbackport.resources.MaterialResourcesUpdate;
 
 /**
  * This class contains the parameters shared between linear type and circular type. The parameters
@@ -65,10 +61,12 @@ public abstract class BaseProgressIndicatorSpec {
   @ColorInt public int trackColor;
 
   /** The animation behavior to show the indicator and track. */
-  @ShowAnimationBehavior public int showAnimationBehavior;
+  @BaseProgressIndicator.ShowAnimationBehavior
+  public int showAnimationBehavior;
 
   /** The animation behavior to hide the indicator and track. */
-  @HideAnimationBehavior public int hideAnimationBehavior;
+  @BaseProgressIndicator.HideAnimationBehavior
+  public int hideAnimationBehavior;
 
   /**
    * Instantiates BaseProgressIndicatorSpec.
@@ -90,11 +88,11 @@ public abstract class BaseProgressIndicatorSpec {
         ThemeEnforcement.obtainStyledAttributes(
             context, attrs, R.styleable.BaseProgressIndicator, defStyleAttr, defStyleRes);
     trackThickness =
-        getDimensionPixelSize(
+        MaterialResourcesUpdate.getDimensionPixelSize(
             context, a, R.styleable.BaseProgressIndicator_trackThickness, defaultIndicatorSize);
     trackCornerRadius =
-        min(
-            getDimensionPixelSize(
+        Math.min(
+            MaterialResourcesUpdate.getDimensionPixelSize(
                 context, a, R.styleable.BaseProgressIndicator_trackCornerRadius, 0),
             trackThickness / 2);
     showAnimationBehavior =

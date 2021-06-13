@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.material.resources;
+package com.google.android.materialbackport.resources;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -29,6 +29,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StyleableRes;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.TintTypedArray;
+
+import com.google.android.material.resources.TextAppearance;
 
 /**
  * Utility methods to resolve resources for components.

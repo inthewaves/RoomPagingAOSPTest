@@ -61,7 +61,7 @@
         app:layout_constraintTop_toBottomOf="@+id/appTitleTextView"
         tools:text="54443" />
 
-        <com.google.android.material.progressindicator.CircularProgressIndicator
+        <com.google.android.materialbackport.progressindicator.CircularProgressIndicator
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

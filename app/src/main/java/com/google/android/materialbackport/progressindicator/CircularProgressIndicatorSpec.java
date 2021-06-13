@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.material.progressindicator;
+package com.google.android.materialbackport.progressindicator;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -28,10 +28,7 @@ import androidx.annotation.StyleRes;
 
 import com.example.roompagingaosptest.R;
 import com.google.android.material.internal.ThemeEnforcement;
-import com.google.android.material.progressindicator.CircularProgressIndicator.IndicatorDirection;
-
-import static com.google.android.material.resources.MaterialResourcesUpdate.getDimensionPixelSize;
-import static java.lang.Math.max;
+import com.google.android.materialbackport.resources.MaterialResourcesUpdate;
 
 /**
  * This class contains the parameters for drawing a circular type progress indicator. The parameters
@@ -47,7 +44,8 @@ public final class CircularProgressIndicatorSpec extends BaseProgressIndicatorSp
   @Px public int indicatorInset;
 
   /** The direction in which the indicator will rotate and grow to. */
-  @IndicatorDirection public int indicatorDirection;
+  @CircularProgressIndicator.IndicatorDirection
+  public int indicatorDirection;
 
   /**
    * Instantiates the spec for {@link CircularProgressIndicator}.
@@ -84,15 +82,15 @@ public final class CircularProgressIndicatorSpec extends BaseProgressIndicatorSp
         ThemeEnforcement.obtainStyledAttributes(
             context, attrs, R.styleable.CircularProgressIndicator, defStyleAttr, defStyleRes);
     indicatorSize =
-        max(
-            getDimensionPixelSize(
+        Math.max(
+            MaterialResourcesUpdate.getDimensionPixelSize(
                 context,
                 a,
                 R.styleable.CircularProgressIndicator_indicatorSize,
                 defaultIndicatorSize),
             trackThickness * 2);
     indicatorInset =
-        getDimensionPixelSize(
+        MaterialResourcesUpdate.getDimensionPixelSize(
             context,
             a,
             R.styleable.CircularProgressIndicator_indicatorInset,
