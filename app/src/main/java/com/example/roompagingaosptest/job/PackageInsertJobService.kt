@@ -144,7 +144,7 @@ class PackageInsertJobService : CoroutineJobService() {
                         val broadcastReceiver = object : BroadcastReceiver() {
                             override fun onReceive(context: Context, intent: Intent) {
                                 Log.d(TAG, "onReceive(): intent: $intent, calling UID: ${Binder.getCallingUid()}")
-                                applicationContext.unregisterReceiver(this)
+                                this@PackageInsertJobService.unregisterReceiver(this)
                                 parentSession.close()
 
                                 val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, Integer.MIN_VALUE)
@@ -190,7 +190,7 @@ class PackageInsertJobService : CoroutineJobService() {
                         applicationContext.registerReceiver(broadcastReceiver, intentFilter)
                         cont.invokeOnCancellation {
                             Log.d(TAG, "invokeOnCancellation(): unregistering receiver")
-                            application.unregisterReceiver(broadcastReceiver)
+                            this@PackageInsertJobService.unregisterReceiver(broadcastReceiver)
                         }
 
                         Log.d(TAG, "before: calling UID: ${Binder.getCallingUid()}")
@@ -198,8 +198,8 @@ class PackageInsertJobService : CoroutineJobService() {
                         try {
                             parentSession.commit(
                                 PendingIntent.getBroadcast(
-                                    applicationContext,
-                                    applicationContext.packageName.hashCode(),
+                                    this@PackageInsertJobService,
+                                    this@PackageInsertJobService.packageName.hashCode(),
                                     Intent(action).setPackage(applicationContext.packageName),
                                     PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
                                 ).intentSender
