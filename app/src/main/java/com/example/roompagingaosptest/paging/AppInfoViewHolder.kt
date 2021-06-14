@@ -235,7 +235,6 @@ class AppInfoViewHolder(
             iconJob = lifecycleScope.launch(Dispatchers.Default) {
                 val packageManager = itemView.context.packageManager
                 val icon = try {
-                    // itemView.context.packageManager.getApplicationIcon(newPackageName)
                     ensureActive()
                     packageManager.getApplicationInfo(newPackageName, 0)
                         .loadUnbadgedIcon(packageManager)
