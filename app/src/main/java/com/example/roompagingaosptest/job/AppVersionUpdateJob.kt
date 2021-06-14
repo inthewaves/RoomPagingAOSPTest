@@ -85,7 +85,7 @@ class AppVersionUpdateJobService : ChainingJobService() {
 
         withContext(Dispatchers.IO) {
             Log.d("AppVersionUpdateJob", "PACKAGES: ${packages.joinToString("\n")}")
-            Log.d("AppVersionUpdateJob", "SYSTEMSHAREDLIBS: ${systemSharedLibs?.asList()?.joinToString("\n")}")
+            Log.d("AppVersionUpdateJob", "SYSTEMSHAREDLIBS: ${systemSharedLibs?.joinToString("\n")}")
             Log.d("AppVersionUpdateJob", "SHAREDLIBS: ${sharedLibs.joinToString("\n")}")
         }
 
@@ -114,7 +114,7 @@ class AppVersionUpdateJobService : ChainingJobService() {
         // setProgress(Progress(0.0).progressData)
         appUpdateProgressDao.upsertProgressForPackage(input.pkg, 0.0)
         repeat(10 * 33) {
-            delay(12L)
+            delay(25L)
             percentage += 0.002
             appUpdateProgressDao.upsertProgressForPackage(input.pkg, percentage)
         }
@@ -139,13 +139,14 @@ class AppVersionUpdateJobService : ChainingJobService() {
 
         appUpdateProgressDao.deletePackage(input.pkg)
 
-        return@coroutineScope JobResult.Success {
+        return@coroutineScope JobResult.Success(
             JobInfo.Builder(
                 params.jobId + 1,
                 ComponentName(this@AppVersionUpdateJobService, UselessJobService::class.java)
             ).build()
-        }
+        )
     }
+
     override fun onStopJobInner(params: JobParameters): Boolean {
         Log.d(TAG, "onStopJobInner, params: $params, id: ${params.jobId}")
         return true

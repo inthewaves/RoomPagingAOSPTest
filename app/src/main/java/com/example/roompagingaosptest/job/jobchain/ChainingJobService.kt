@@ -26,22 +26,37 @@ abstract class ChainingJobService : CoroutineJobService() {
 
     protected sealed class JobResult {
         /**
-         * A [JobResult] indicating a successful job. The [nextJobCreator] is optional, and it is
-         * used to create the next job in the chain using the supplied [JobParameters]. If the
-         * [nextJobCreator] is null pr [nextJobCreator] returns null, no further jobs will be
-         * scheduled.
+         * A [JobResult] indicating a successful job. The [nextJob] is optional. If it's not null,
+         * it will be scheduled.
+         *
+         * [jobFinished] will be called with `wantsReschedule` as `false`.
+         *
+         * @see jobFinished
          */
-        class Success(val nextJobCreator: (() -> JobInfo?)?) : JobResult()
+        data class Success(val nextJob: JobInfo?) : JobResult()
         /**
          * A [JobResult] indicating a failed job. Next jobs in the chain will not be run, and the
          * failed job will not be rescheduled.
+         *
+         * [jobFinished] will be called with `wantsReschedule` as `false`.
+         *
+         * @see jobFinished
          */
-        object Failure : JobResult()
+        object Failure : JobResult() {
+            override fun toString() = "Failure"
+        }
         /**
          * A [JobResult] indicating a failed job that needs a retry. The failed job will be
          * rescheduled, but jobs that are next in the chain will not be created until a [Success].
+         * Retries are subject to the job's [JobInfo.getBackoffPolicy].
+         *
+         * [jobFinished] will be called with `wantsReschedule` as `true`.
+         *
+         * @see jobFinished
          */
-        object Retry : JobResult()
+        object Retry : JobResult() {
+            override fun toString() = "Retry"
+        }
     }
 
     /**
@@ -60,18 +75,18 @@ abstract class ChainingJobService : CoroutineJobService() {
      *
      * @return The [JobResult]: [JobResult.Success], [JobResult.Retry], or [JobResult.Failure].
      * - The next job in the chain will be scheduled if and only if [JobResult.Success] is returned.
-     *   A lambda that creates the next job ([JobResult.Success.nextJobCreator]) will be used to
-     *   create the next job instance. If the nextJobCreator is null or nextJobCreator returns null,
-     *   no further jobs will be scheduled.
+     *   The [JobResult.Success.nextJob] can be set to schedule the next job. If the nextJob is
+     *   null, no further jobs will be scheduled.
      * - Returning [JobResult.Retry] gives the job another chance to reschedule and complete the job
      *   successfully to advance the job chain.
-     * - Returning [JobResult.Failure] fails the job and doesn't run any of the dependents.
+     * - Returning [JobResult.Failure] fails the job and doesn't run any of the dependents. Uncaught
+     *   exceptions are treated as [JobResult.Failure].
      */
     protected abstract suspend fun runJob(params: JobParameters): JobResult
 
     final override suspend fun doWork(params: JobParameters) {
         val chainLength = params.extras.getInt(EXTRA_CHAIN_LENGTH, 1)
-        Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): starting with chainLength $chainLength")
+        Log.d(TAG, "doWork (${this::class.java.simpleName}): starting with chainLength $chainLength")
         val result: JobResult = try {
             // Wrap in a coroutineScope to ensure we catch exceptions thrown.
             coroutineScope {
@@ -82,16 +97,16 @@ abstract class ChainingJobService : CoroutineJobService() {
             // JobServiceCoroutineCancellationException is only used when the CoroutineJobService
             // has onStopJob or onDestroy called. Whether to reschedule should be handled by
             // onStopJobInner, so we just rethrow it.
-            Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): cancellation exception", e)
+            Log.d(TAG, "doWork (${this::class.java.simpleName}): cancellation exception", e)
             throw e
         } catch (e: Throwable) {
-            Log.w(TAG, "doWork (subclass ${this::class.java.simpleName}): exception", e)
+            Log.w(TAG, "doWork (${this::class.java.simpleName}): exception", e)
             JobResult.Failure
         }
-        Log.d(TAG, "doWork (subclass ${this::class.java.simpleName}): result: $result")
+        Log.d(TAG, "doWork (${this::class.java.simpleName}): result: $result")
 
         if (result is JobResult.Success) {
-            val nextJob: JobInfo? = result.nextJobCreator?.invoke()
+            val nextJob: JobInfo? = result.nextJob
             if (nextJob != null) {
                 if (chainLength <= MAX_JOB_CHAIN_LENGTH) {
                     nextJob.extras.putInt(EXTRA_CHAIN_LENGTH, chainLength + 1)

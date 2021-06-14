@@ -37,7 +37,7 @@ abstract class CoroutineJobService : JobService() {
 
     /**
      * The [CoroutineDispatcher] to use for running the jobs for this [CoroutineJobService]. There
-     * may be multiple coroutines running on this service if multiple jobs were enqueued for
+     * may be multiple coroutines running on this dispatcher if multiple jobs were scheduled for
      * this particular service.
      */
     abstract val dispatcher: CoroutineDispatcher
@@ -71,7 +71,7 @@ abstract class CoroutineJobService : JobService() {
     final override fun onStartJob(params: JobParameters): Boolean {
         Log.d(
             "CoroutineJobService",
-            "(subclass ${this::class.java.simpleName}): " +
+            "(${this::class.java.simpleName}): " +
                     "onStartJob(), with " +
                     "params jobId=${params.jobId}, " +
                     "param hashcode: ${params.hashCode()}"
@@ -85,7 +85,7 @@ abstract class CoroutineJobService : JobService() {
                     synchronized(activeJobs) {
                         Log.d(
                             "CoroutineJobService",
-                            "(subclass ${this@CoroutineJobService::class.java.simpleName}): removing job id ${params.jobId}"
+                            "(${this@CoroutineJobService::class.java.simpleName}): removing job id ${params.jobId}"
                         )
                         activeJobs.remove(params)
                     }
@@ -100,12 +100,11 @@ abstract class CoroutineJobService : JobService() {
     }
 
     final override fun onStopJob(params: JobParameters): Boolean {
-        val shouldRetry = onStopJobInner(params)
         synchronized(activeJobs) {
             activeJobs[params]?.cancel(JobServiceCoroutineCancellationException("onStopJob called"))
             activeJobs.remove(params)
         }
-        return shouldRetry
+        return onStopJobInner(params)
     }
 
     @CallSuper

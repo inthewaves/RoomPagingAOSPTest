@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.room.withTransaction
 import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.TestDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -33,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         activity = this
         setContentView(R.layout.activity_main)
 
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val testDb = TestDatabase.getInstance(this@MainActivity)
             val appInfoDao = testDb.appInfoDao()
 
