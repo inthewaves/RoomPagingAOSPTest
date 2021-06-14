@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="secondary_app_icon_size">32dp</dimen>
+    <dimen name="secondary_app_icon_size">26dp</dimen>
 </resources>
