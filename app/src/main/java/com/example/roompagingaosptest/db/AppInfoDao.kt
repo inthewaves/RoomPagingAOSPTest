@@ -49,7 +49,7 @@ interface AppInfoDao {
     @Query("SELECT COUNT(*) FROM AppInfo")
     suspend fun countAppInfo(): Long
 
-    @Query("SELECT * FROM AppInfo ORDER BY packageName")
+    @Query("SELECT * FROM AppInfo ORDER BY IFNULL(label, packageName) COLLATE NOCASE")
     fun allAppInfo(): PagingSource<Int, AppInfo>
 
     @Query("SELECT * FROM AppInfo ORDER BY packageName")
