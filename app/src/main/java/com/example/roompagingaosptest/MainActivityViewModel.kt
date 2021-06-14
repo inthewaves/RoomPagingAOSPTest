@@ -29,6 +29,6 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     }
 
     suspend fun insertAppInfo(appInfo: AppInfo) {
-        database.appInfoDao().updateOrInsert(appInfo)
+        database.appInfoDao().upsert(appInfo)
     }
 }

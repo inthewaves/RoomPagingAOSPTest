@@ -99,7 +99,7 @@ class PackageInsertJobService : CoroutineJobService() {
 
             TestDatabase.getInstance(applicationContext)
                 .appInfoDao()
-                .updateOrInsert(appInfo)
+                .upsert(appInfo)
 
             if (pkg == "install") {
                 withContext(Dispatchers.Main) {

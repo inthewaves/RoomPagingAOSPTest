@@ -1,6 +1,5 @@
 package com.example.roompagingaosptest
 
-import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
 import androidx.room.Dao
@@ -12,22 +11,22 @@ import androidx.room.Update
 import com.example.roompagingaosptest.db.AppInfo
 
 @Dao
-interface AppInfoDao {
+abstract class AppInfoDao {
     @Transaction
-    suspend fun updateOrInsert(appInfo: AppInfo) {
+    open suspend fun upsert(appInfo: AppInfo) {
         if (update(appInfo) <= 0) {
             insert(appInfo)
         }
     }
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(appInfo: AppInfo)
+    abstract suspend fun insert(appInfo: AppInfo)
 
     /**
      * @return The number of rows updated.
      */
     @Update
-    suspend fun update(appInfo: AppInfo): Int
+    abstract suspend fun update(appInfo: AppInfo): Int
 
     @Update
     suspend fun updateVersionCode(packageName: String, newVersionCode: Long) {
@@ -35,26 +34,29 @@ interface AppInfoDao {
     }
 
     @Query("DELETE FROM AppInfo WHERE packageName = :packageName")
-    suspend fun delete(packageName: String)
+    abstract suspend fun delete(packageName: String)
 
     @Query("""UPDATE AppInfo 
         SET versionCode = :newVersionCode, lastUpdated = :lastUpdateTimestamp 
         WHERE packageName = :packageName""")
-    @VisibleForTesting
-    suspend fun updateVersionCodeInternal(packageName: String, newVersionCode: Long, lastUpdateTimestamp: Long)
+    protected abstract suspend fun updateVersionCodeInternal(
+        packageName: String,
+        newVersionCode: Long,
+        lastUpdateTimestamp: Long
+    )
 
     @Query("SELECT * FROM AppInfo WHERE packageName = :packageName")
-    suspend fun getAppInfo(packageName: String): AppInfo?
+    abstract suspend fun getAppInfo(packageName: String): AppInfo?
 
     @Query("SELECT COUNT(*) FROM AppInfo")
-    suspend fun countAppInfo(): Long
+    abstract suspend fun countAppInfo(): Long
 
     @Query("SELECT * FROM AppInfo ORDER BY IFNULL(label, packageName) COLLATE NOCASE")
-    fun allAppInfo(): PagingSource<Int, AppInfo>
+    abstract fun allAppInfo(): PagingSource<Int, AppInfo>
 
     @Query("SELECT * FROM AppInfo ORDER BY packageName")
-    fun allAppInfoList(): List<AppInfo>
+    abstract fun allAppInfoList(): List<AppInfo>
 
     @Query("SELECT * FROM AppInfo ORDER BY packageName")
-    fun allAppInfoLivedata(): LiveData<List<AppInfo>>
+    abstract fun allAppInfoLivedata(): LiveData<List<AppInfo>>
 }
