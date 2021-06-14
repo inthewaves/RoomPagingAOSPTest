@@ -9,80 +9,85 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="100dp">
+        android:layout_height="60dp">
 
-    <TextView
-        android:id="@+id/appTitleTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="Some app name" />
-
-    <TextView
-        android:id="@+id/lastUpdatedTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:text="Last updated:" />
-
-        <Button
-            android:id="@+id/updateButton"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="@string/button_update"
+        <ImageView
+            android:id="@+id/appIcon"
+            android:layout_width="@dimen/secondary_app_icon_size"
+            android:layout_height="@dimen/secondary_app_icon_size"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toStartOf="@+id/guideline"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:srcCompat="@drawable/ic_launcher_foreground" />
 
-    <Button
-        android:id="@+id/deleteButton"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/button_delete"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/updateButton" />
-
-    <TextView
-        android:id="@+id/versionCodeTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:layout_constraintStart_toStartOf="@+id/appTitleTextView"
-        app:layout_constraintTop_toBottomOf="@+id/appTitleTextView"
-        tools:text="54443" />
 
         <com.google.android.materialbackport.progressindicator.CircularProgressIndicator
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
             android:indeterminate="false"
-            app:layout_constraintBottom_toTopOf="@+id/updateButton"
+            android:scaleX="1.15"
+            android:scaleY="1.15"
+            app:layout_constraintEnd_toStartOf="@+id/guideline"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/appTitleTextView"
+            tools:visibility="visible" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_begin="53dp" />
+
+        <TextView
+            android:id="@+id/appTitleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:ellipsize="marquee"
+            android:fadingEdge="horizontal"
+            android:singleLine="true"
+            android:textAppearance="?android:attr/textAppearanceListItem"
+            app:layout_constraintStart_toStartOf="@+id/guideline"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Some app name" />
+
+        <Button
+            android:id="@+id/updateButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="4dp"
+            android:text="@string/button_update"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
-        android:id="@+id/expandIconImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:contentDescription="Expanding icon"
-        android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="@+id/deleteButton"
-        app:layout_constraintEnd_toStartOf="@+id/deleteButton"
-        app:layout_constraintTop_toTopOf="@+id/deleteButton"
-        app:srcCompat="@drawable/ic_baseline_arrow_down_24" />
+        <TextView
+            android:id="@+id/versionCodeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textDirection="locale"
+            app:layout_constraintStart_toStartOf="@+id/appTitleTextView"
+            app:layout_constraintTop_toBottomOf="@+id/appTitleTextView"
+            tools:text="54443" />
+
+        <ImageView
+            android:id="@+id/expandIconImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Expanding icon"
+            android:padding="12dp"
+            app:layout_constraintBottom_toBottomOf="@+id/updateButton"
+            app:layout_constraintEnd_toStartOf="@+id/updateButton"
+            app:layout_constraintTop_toTopOf="@+id/updateButton"
+            app:layout_constraintVertical_bias="1.0"
+            app:srcCompat="@drawable/ic_baseline_arrow_down_24" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout

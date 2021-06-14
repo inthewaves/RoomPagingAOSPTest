@@ -33,7 +33,10 @@ class AppInfoAdapter(
 
     override fun onBindViewHolder(holder: AppInfoViewHolder, position: Int) {
         Log.d(TAG, "onBindViewHolder: position=$position")
-        holder.bind(getItem(position))
+        val appInfo = getItem(position)
+        if (appInfo != null) {
+            holder.bind(appInfo)
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = AppInfoViewHolder(parent, viewModel)

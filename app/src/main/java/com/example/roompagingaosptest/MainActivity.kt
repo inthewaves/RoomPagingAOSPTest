@@ -38,16 +38,22 @@ class MainActivity : AppCompatActivity() {
             val testDb = TestDatabase.getInstance(this@MainActivity)
             val appInfoDao = testDb.appInfoDao()
 
+
             if (appInfoDao.countAppInfo() <= 0) {
                 Log.d("MainActivity", "inserting all apps")
                 testDb.withTransaction {
-                    packageManager.getInstalledPackages(PackageManager.GET_META_DATA)
-                        .forEach { packageInfo ->
+                    packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+                        .forEach { appInfo ->
+                            val packageInfo = packageManager.getPackageInfo(
+                                appInfo.packageName,
+                                PackageManager.GET_META_DATA
+                            )
                             appInfoDao.insert(
                                 AppInfo(
-                                    packageInfo.packageName,
-                                    packageInfo.longVersionCode,
-                                    packageInfo.lastUpdateTime
+                                    packageName = appInfo.packageName,
+                                    label = appInfo.loadLabel(packageManager).toString(),
+                                    versionCode = packageInfo.longVersionCode,
+                                    lastUpdated = packageInfo.lastUpdateTime / 1000L
                                 )
                             )
                         }

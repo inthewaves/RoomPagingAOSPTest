@@ -95,7 +95,7 @@ class PackageInsertJobService : CoroutineJobService() {
             Log.d(TAG, "delaying for 3 seconds")
             delay(3000L)
 
-            val appInfo = AppInfo(pkg, newVersion, System.currentTimeMillis() / 1000)
+            val appInfo = AppInfo(pkg, null, newVersion, System.currentTimeMillis() / 1000)
 
             TestDatabase.getInstance(applicationContext)
                 .appInfoDao()

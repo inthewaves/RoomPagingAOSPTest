@@ -1,5 +1,6 @@
 package com.example.roompagingaosptest.paging
 
+import android.content.pm.PackageManager
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.util.Log
@@ -24,13 +25,14 @@ import com.example.roompagingaosptest.db.AppInfo
 import com.example.roompagingaosptest.db.ProgressDatabase
 import com.example.roompagingaosptest.job.AppVersionUpdateJobService
 import com.google.android.materialbackport.progressindicator.CircularProgressIndicator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AppInfoViewHolder(
     parent: ViewGroup,
@@ -54,13 +56,14 @@ class AppInfoViewHolder(
         private set
 
     private val appName: TextView = itemView.findViewById(R.id.appTitleTextView)
+    private val appIcon: ImageView = itemView.findViewById(R.id.appIcon)
     private val versionCode: TextView = itemView.findViewById(R.id.versionCodeTextView)
-    private val lastUpdate: TextView = itemView.findViewById(R.id.lastUpdatedTextView)
+    // private val lastUpdate: TextView = itemView.findViewById(R.id.lastUpdatedTextView)
 
     private val expandIcon: ImageView = itemView.findViewById(R.id.expandIconImageView)
     private val expandLinearLayout: LinearLayout = itemView.findViewById(R.id.expandLinearLayout)
 
-    private val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
+    // private val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
     private val updateButton: Button = itemView.findViewById(R.id.updateButton)
     private val progressBar: CircularProgressIndicator = itemView.findViewById(R.id.progressBar)
     init {
@@ -118,23 +121,10 @@ class AppInfoViewHolder(
     private var progressJob: Job? = null
     init {
         updateButton.setOnClickListener {
+            Log.d(TAG, "updateButton clicked for appInfo: $appInfo")
             appInfo?.let { appInfo ->
                 AppVersionUpdateJobService.enqueueJob(it.context, appInfo.packageName)
                 relaunchUpdateObserverJob(appInfo.packageName)
-            }
-        }
-
-        lifecycleScope.launch {
-            val deleteAppInfoActor = actor<AppInfo>(capacity = Channel.CONFLATED) {
-                for (appInfo in channel) {
-                    viewModel.deleteAppInfo(appInfo.packageName)
-                }
-            }
-            deleteButton.setOnClickListener { button ->
-                appInfo?.let {
-                    deleteAppInfoActor.offer(it)
-                    AppVersionUpdateJobService.cancelJob(button.context, it.packageName)
-                }
             }
         }
     }
@@ -220,13 +210,16 @@ class AppInfoViewHolder(
         }
     }
 
+    private var iconJob: Job? = null
+
     @UiThread
-    fun bind(appInfo: AppInfo?) {
+    fun bind(appInfo: AppInfo) {
+        val previousPackageName = this.appInfo?.packageName
         this.appInfo = appInfo
-        appName.text = appInfo?.packageName ?: ""
-        versionCode.text = appInfo?.versionCode?.toString() ?: ""
-        lastUpdate.text = appInfo?.lastUpdated?.toString() ?: ""
-        appInfo?.let { relaunchUpdateObserverJob(it.packageName) }
+        appName.text = appInfo.label ?: appInfo.packageName ?: ""
+        versionCode.text = appInfo.versionCode.toString() ?: ""
+        // lastUpdate.text = appInfo?.lastUpdated?.toString() ?: ""
+        relaunchUpdateObserverJob(appInfo.packageName)
 
         // Collapse when rebinded so that other items don't magically appear as expanded when
         // scrolling.
@@ -234,6 +227,26 @@ class AppInfoViewHolder(
         expandIcon.setOnClickListener { icon ->
             val isExpended = icon.tag as? Boolean ?: false
             setExpandState(icon, !isExpended, true)
+        }
+        appInfo.packageName.let { newPackageName ->
+            if (previousPackageName == newPackageName && appIcon.drawable != null) return
+            appIcon.setImageDrawable(null)
+            iconJob?.cancel()
+            iconJob = lifecycleScope.launch(Dispatchers.Default) {
+                val packageManager = itemView.context.packageManager
+                val icon = try {
+                    // itemView.context.packageManager.getApplicationIcon(newPackageName)
+                    ensureActive()
+                    packageManager.getApplicationInfo(newPackageName, 0)
+                        .loadUnbadgedIcon(packageManager)
+                } catch (e: PackageManager.NameNotFoundException) {
+                    null
+                }
+                ensureActive()
+                withContext(Dispatchers.Main) {
+                    appIcon.setImageDrawable(icon)
+                }
+            }
         }
     }
 }
